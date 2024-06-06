@@ -6,19 +6,11 @@ autoinstall:
   keyboard:
     layout: gb
     variant: ''
-
-  network:
-    version: 2
-    ethernets:
-      eth0:
-        dhcp4: true
-
   ssh:
     install-server: true
     allow-pw: false
     authorized-keys:
       - "SHA256:tCVtGDf7B1w750v289EM7nndrknbncSi7ISdzLm0NSM darkfuckerberg@admin.com"
-
   storage:
     config:
       - type: disk
