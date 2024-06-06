@@ -1,61 +1,25 @@
 #cloud-config
 autoinstall:
   version: 1
-  locale: en_GB.UTF-8
+  interactive-sections:
+    - storage
+    - identity
+locale: en_GB.UTF-8
   timezone: Europe/London
   keyboard:
     layout: gb
-    variant: ''
+
+  network:
+    version: 2
+    ethernets:
+      enp6s0:
+        dhcp4: true
+
   ssh:
     install-server: true
     allow-pw: false
     authorized-keys:
       - "SHA256:tCVtGDf7B1w750v289EM7nndrknbncSi7ISdzLm0NSM darkfuckerberg@admin.com"
-  storage:
-    config:
-      - type: disk
-        id: disk0
-        ptable: gpt
-        preserve: false
-        name: ''
-        grub_device: true
-        wipe: superblock
-        device: auto
-        partitions:
-          - type: partition
-            id: boot-partition
-            size: 1G
-            flag: boot
-          - type: partition
-            id: root-partition
-            size: 40%
-          - type: partition
-            id: home-partition
-            size: -1  # Use the remaining space
-      - type: format
-        id: boot-fs
-        fstype: ext4
-        volume: boot-partition
-      - type: mount
-        id: boot-mount
-        path: /boot
-        device: boot-fs
-      - type: format
-        id: root-fs
-        fstype: ext4
-        volume: root-partition
-      - type: mount
-        id: root-mount
-        path: /
-        device: root-fs
-      - type: format
-        id: home-fs
-        fstype: ext4
-        volume: home-partition
-      - type: mount
-        id: home-mount
-        path: /home
-        device: home-fs
 
   packages:
     - ubuntu-desktop
