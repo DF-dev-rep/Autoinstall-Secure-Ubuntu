@@ -3,11 +3,12 @@ autoinstall:
   version: 1
   interactive-sections:
     - storage
-    - identity
+
   locale: en_GB.UTF-8
   timezone: Europe/London
   keyboard:
     layout: gb
+    variant: ''
 
   network:
     version: 2
@@ -20,6 +21,11 @@ autoinstall:
     allow-pw: false
     authorized-keys:
       - "SHA256:tCVtGDf7B1w750v289EM7nndrknbncSi7ISdzLm0NSM darkfuckerberg@admin.com"
+
+  identity:
+    hostname: secure-user
+    username: secure-user
+    password: $6$kuWJI5fxJ63MGr1M$J96Zk31ifkIa4yFoDxUOYGBIve0MEizLl/MdLcQY/r3XcFldwke1C4odUsPTmV.XN6tUtjUByZ0xL3GDAYxeM/
 
   packages:
     - ubuntu-desktop
