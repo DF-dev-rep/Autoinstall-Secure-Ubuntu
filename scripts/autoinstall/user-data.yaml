@@ -1,99 +1,73 @@
 #cloud-config
 autoinstall:
   version: 1
-
   interactive-sections:
     - storage
-    - identity
-    - network
 
-  identity:
-    hostname: temporary-hostname
-    username: secureuser
-  ssh:
-    install-server: true
-    allow-pw: false
-    authorized-keys:
-      - "SHA256:tCVtGDf7B1w750v289EM7nndrknbncSi7ISdzLm0NSM darkfuckerberg@admin.com"
-  storage:
-    config:
-      - type: disk
-        id: target-disk
-        ptable: gpt
-        path: '/dev/sda'  # This path will be replaced by the script
-        wipe: superblock-recursive
-        preserve: false
-        grub_device: true
-      - type: partition
-        id: partition-efi
-        device: target-disk
-        size: 1G
-        flag: boot
-        number: 1
-      - type: format
-        id: format-efi
-        volume: partition-efi
-        fstype: vfat
-      - type: partition
-        id: partition-boot
-        device: target-disk
-        size: 1G
-        number: 2
-      - type: format
-        id: format-boot
-        volume: partition-boot
-        fstype: ext4
-      - type: partition
-        id: partition-encrypted
-        device: target-disk
-        size: -1  # Use the remaining space
-        number: 3
-      - type: luks
-        id: luks-data
-        device: partition-encrypted
-        key: "random"
-      - type: lvm_volgroup
-        id: vg0
-        devices:
-          - luks-data
-      - type: lvm_partition
-        id: lv-root
-        volgroup: vg0
-        size: 40%
-      - type: lvm_partition
-        id: lv-home
-        volgroup: vg0
-        size: 60%
-      - type: format
-        id: format-root
-        volume: lv-root
-        fstype: ext4
-      - type: format
-        id: format-home
-        volume: lv-home
-        fstype: ext4
-      - type: mount
-        id: mount-root
-        device: format-root
-        path: /
-      - type: mount
-        id: mount-home
-        device: format-home
-        path: /home
-      - type: mount
-        id: mount-boot
-        device: format-boot
-        path: /boot
-  network:
-    version: 2
-    ethernets:
-      eth0:
-        dhcp4: true
   locale: en_GB.UTF-8
   timezone: Europe/London
   keyboard:
     layout: gb
     variant: ''
+
+  network:
+    version: 2
+    ethernets:
+      eth0:
+        dhcp4: true
+
+  ssh:
+    install-server: true
+    allow-pw: false
+    authorized-keys:
+      - "SHA256:tCVtGDf7B1w750v289EM7nndrknbncSi7ISdzLm0NSM darkfuckerberg@admin.com"
+
+  storage:
+    config:
+      - type: disk
+        id: disk0
+        ptable: gpt
+        preserve: false
+        name: ''
+        grub_device: true
+        wipe: superblock
+        device: auto
+        partitions:
+          - type: partition
+            id: boot-partition
+            size: 1G
+            flag: boot
+          - type: partition
+            id: root-partition
+            size: 40%
+          - type: partition
+            id: home-partition
+            size: -1  # Use the remaining space
+      - type: format
+        id: boot-fs
+        fstype: ext4
+        volume: boot-partition
+      - type: mount
+        id: boot-mount
+        path: /boot
+        device: boot-fs
+      - type: format
+        id: root-fs
+        fstype: ext4
+        volume: root-partition
+      - type: mount
+        id: root-mount
+        path: /
+        device: root-fs
+      - type: format
+        id: home-fs
+        fstype: ext4
+        volume: home-partition
+      - type: mount
+        id: home-mount
+        path: /home
+        device: home-fs
+
   packages:
     - ubuntu-desktop
     - ufw
