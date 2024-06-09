@@ -1,8 +1,12 @@
 #cloud-config
 autoinstall:
   version: 1
-  interactive-sections:
-    - storage
+
+  locale: en_GB.UTF-8
+  timezone: Europe/London
+  keyboard:
+    layout: gb
+    variant: ''
 
   network:
     version: 2
@@ -10,16 +14,83 @@ autoinstall:
       enp6s0:
         dhcp4: true
 
-  ssh:
-    install-server: true
-    allow-pw: false
-    authorized-keys:
-      - "SHA256:tCVtGDf7B1w750v289EM7nndrknbncSi7ISdzLm0NSM darkfuckerberg@admin.com"
-
   identity:
     hostname: secure-user
     username: secure-user
     password: $6$kuWJI5fxJ63MGr1M$J96Zk31ifkIa4yFoDxUOYGBIve0MEizLl/MdLcQY/r3XcFldwke1C4odUsPTmV.XN6tUtjUByZ0xL3GDAYxeM/
+
+  ssh:
+    install-server: true
+    allow-pw: false
+    authorized-keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDNKJ5Tx8M45mf0HNY/DR1fIXx49JrWEKpb7BotnmNe68qcLKYvLmKNUQNOTTU71QN3J3Nn2PxJk/w8bDgcqkhhK5pXIQIoEs+wLsxOxsfxQj5b7A3Actscd/ePXtCq7AVzVIYeGY2JLrBtxQ69v4I4LC4W/DjLNP8309TrK9yQUhrwYPDEWdBebO/kcE+lthxOypXop84k6UZeaxaNZzNFp+NjPeYdTWnTe9InnRcOxHtD+yDI8GvwxgbWcCrzf36f9RKjFetwOMp5CMslz6RxoZamKnLkaqs9+ZIkC4SGvJ/dzHBMO5aXOORtfdU2fNVPjq8EilFP/N6CfXZuP4myjuHEWRsYAj29E6DZvSeJS0fjdz3sTfN0/aIo097MQV6f+L+kRgzkTkgoJ+7JX65ygVNKwiWa5v9F1bjn4nDrUmlEwrkD7q+GyVaMjsscLIBJidBQPm53dXosbShMGnjDZXX9qO56pqMxA8pgTi1aubuGRPu4VeV8/KuNdB/P47ukeNqOxGd0YYdDls0J+Wv0QazfFRPhDWTuEidBgvu7Njz6YBC5Q8BSzsXa41ZXOyrZNZrGR/N+lgW5ysPvq+ZtPRWGPUIRNXdbYrSiwQCjXVQ8tE/iqGpajalLurJDgdLo0G8OGUGnw23VNdVjFuJVuc/cUTMPwxIcP7Y1C1knJQ== darkfuckerberg@meta1.free"
+
+  storage:
+    config:
+      - id: disk0
+        type: disk
+        match:
+          path: /dev/sdX  # Replace 'X' with the specific disk you want to use (e.g., 'a' for /dev/sda)
+        ptable: gpt
+        wipe: superblock-recursive
+        preserve: false
+        name: ''
+        grub_device: true
+
+      - id: partition1
+        type: partition
+        size: 512M
+        flag: boot
+        number: 1
+        device: disk0
+        preserve: false
+
+      - id: partition2
+        type: partition
+        size: -1
+        number: 2
+        device: disk0
+        preserve: false
+
+      - id: partition3
+        type: partition
+        size: -1
+        number: 3
+        device: disk0
+        preserve: false
+
+      - id: format1
+        type: format
+        fstype: fat32
+        volume: partition1
+        preserve: false
+
+      - id: format2
+        type: format
+        fstype: ext4
+        volume: partition2
+        preserve: false
+
+      - id: format3
+        type: format
+        fstype: ext4
+        volume: partition3
+        preserve: false
+
+      - id: mount1
+        type: mount
+        device: format1
+        path: /boot/efi
+
+      - id: mount2
+        type: mount
+        device: format2
+        path: /
+
+      - id: mount3
+        type: mount
+        device: format3
+        path: /home
 
   packages:
     - ubuntu-desktop
@@ -50,12 +121,6 @@ autoinstall:
     - signal-desktop
 
   late-commands:
-    # Set a unique hostname based on UUID if temporary-hostname is still present
-    - "current_hostname=$(hostname)"
-    - "if [ \"$current_hostname\" = 'temporary-hostname' ]; then hostnamectl set-hostname $(uuidgen | cut -d- -f1); fi"
-    - "sed -i 's/temporary-hostname/$(hostname)/g' /etc/hosts"
-    - "sed -i 's/temporary-hostname/$(hostname)/g' /etc/hostname"
-
     # Disable IPv6 system-wide
     - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf"
     - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf"
