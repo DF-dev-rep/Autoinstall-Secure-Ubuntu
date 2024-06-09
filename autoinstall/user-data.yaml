@@ -14,7 +14,7 @@ autoinstall:
   identity:
     hostname: secure-user
     username: secure-user
-    password: $6$kuWJI5fxJ63MGr1M$J96Zk31ifkIa4yFoDxUOYGBIve0MEizLl/MdLcQY/r3XcFldwke1C4odUsPTmV.XN6tUtjUByZ0xL3GDAYxeM/
+    password: $6$1L8lElWDK/f/06nd$hhQ.Y4z2zv9MKBn99Y.98aH.aTEhggkoslXA/RdT7zkZ2QiqeHIRvFT2K3Vc7EKYwwFYKPx5LuP89ilP1bTlt0
   ssh:
     install-server: true
     allow-pw: false
