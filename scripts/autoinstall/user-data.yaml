@@ -30,7 +30,7 @@ autoinstall:
       - id: disk0
         type: disk
         match:
-          path: /dev/sdX  # Replace 'X' with the specific disk you want to use (e.g., 'a' for /dev/sda)
+          path: /dev/sda  # Replace 'X' with the specific disk you want to use (e.g., 'a' for /dev/sda)
         ptable: gpt
         wipe: superblock-recursive
         preserve: false
