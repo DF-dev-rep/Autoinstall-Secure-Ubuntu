@@ -1,68 +1,151 @@
 #cloud-config
 autoinstall:
   version: 1
+  locale: en_GB.UTF-8
+  timezone: Europe/London
+  keyboard:
+    layout: gb
+    variant: ''
+  network:
+    version: 2
+    ethernets:
+      enp6s0:
+        dhcp4: true
   identity:
     hostname: secure-user
     username: secure-user
-    password: $6$Pa5Cf1I.Y/pj5nct$rXNrRLhicI9RDeAgTRBcAkIN/hrPRVuvFGy8cLNi.FO7ZR7ZiPMJ6xr7bVQIRu6.gCPF3uUxCPuhk/fisjM7w1
-  locale: en_US
-  keyboard:
-    layout: us
-    variant: ''
-  storage:
-    layout:
-      name: lvm
-    swap:
-      size: 2048
-    config:
-      - id: disk-sda
-        type: disk
-        match:
-          ssd: false
-          size: 0
-        ptable: gpt
-        path: /dev/sda
-        wipe: superblock
-      - id: partition-boot
-        type: partition
-        number: 1
-        size: 512M
-        wipe: superblock
-        flag: boot
-        device: disk-sda
-      - id: partition-root
-        type: partition
-        number: 2
-        size: -1
-        wipe: superblock
-        flag: root
-        device: disk-sda
-      - id: format-boot
-        type: format
-        fstype: ext4
-        volume: partition-boot
-      - id: format-root
-        type: format
-        fstype: ext4
-        volume: partition-root
-      - id: mount-boot
-        type: mount
-        path: /boot
-        device: format-boot
-      - id: mount-root
-        type: mount
-        path: /
-        device: format-root
-  grub:
-    uefi: true
+    password: $6$kuWJI5fxJ63MGr1M$J96Zk31ifkIa4yFoDxUOYGBIve0MEizLl/MdLcQY/r3XcFldwke1C4odUsPTmV.XN6tUtjUByZ0xL3GDAYxeM/
+  ssh:
+    install-server: true
+    allow-pw: false
+    authorized-keys:
+      - "SHA256:W2xR7pH+FpAzsWDUu6ISgcaEVccBTFSr5hP3FycZAnM darkfuckerberg@meta1.free"
   packages:
+    - ubuntu-desktop
+    - ufw
+    - fail2ban
+    - apparmor
+    - apparmor-profiles
+    - apparmor-utils
+    - cryptsetup
+    - vim
+    - curl
+    - postfix
+    - mutt
+    - psad
+    - notesnook
+    - torbrowser-launcher
+    - secure-delete
+    - wipe
+    - kleopatra
     - keepassxc
-  user-data:
-    late-commands:
-      - |
-        echo "Installing KeePassXC..."
-        chroot /target apt-get update
-        chroot /target apt-get -y install keepassxc
-
-# Additional configurations can be added below
+    - openvpn
+    - unattended-upgrades
+    - gnupg
+    - brave-browser
+    - firejail
+    - dnscrypt-proxy
+    - veracrypt
+    - signal-desktop
+  late-commands:
+    - "sed -i 's/temporary-hostname/$(hostname)/g' /etc/hosts"
+    - "sed -i 's/temporary-hostname/$(hostname)/g' /etc/hostname"
+    - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf"
+    - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf"
+    - "echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf"
+    - "echo 'GRUB_CMDLINE_LINUX=\"ipv6.disable=1\"' >> /etc/default/grub"
+    - "update-grub"
+    - "ufw default deny incoming"
+    - "ufw default allow outgoing"
+    - "ufw allow from any to any port 1194 proto udp"
+    - "ufw allow 22/tcp"
+    - "ufw enable"
+    - "debconf-set-selections <<< 'postfix postfix/main_mailer_type select Local only'"
+    - "debconf-set-selections <<< 'postfix postfix/mailname string $(hostname).localdomain'"
+    - "debconf-set-selections <<< 'postfix postfix/myhostname string $(hostname).localdomain'"
+    - "service postfix restart"
+    - "sed -i 's/EMAIL_ADDRESSES SecurityLogs@temporary-hostname.localdomain/EMAIL_ADDRESSES SecurityLogs@$(hostname).localdomain/' /etc/psad/psad.conf"
+    - "service psad restart"
+    - "echo 'set mbox_type=Maildir' >> /home/secureuser/.muttrc"
+    - "echo 'set folder=~/Mail' >> /home/secureuser/.muttrc"
+    - "echo 'set spoolfile=~/Mail/inbox' >> /home/secureuser/.muttrc"
+    - "echo 'set postponed=~/Mail/drafts' >> /home/secureuser/.muttrc"
+    - "echo 'set header_cache=~/.mutt/cache/headers' >> /home/secureuser/.muttrc"
+    - "echo 'set message_cachedir=~/.mutt/cache/bodies' >> /home/secureuser/.muttrc"
+    - "echo 'set certificate_file=~/.mutt/certificates' >> /home/secureuser/.muttrc"
+    - "fallocate -l 4G /swapfile"
+    - "chmod 600 /swapfile"
+    - "echo YES | cryptsetup luksFormat /swapfile"
+    - "cryptsetup open /swapfile swapfile"
+    - "mkswap /dev/mapper/swapfile"
+    - "swapon /dev/mapper/swapfile"
+    - "echo '/dev/mapper/swapfile none swap sw 0 0' >> /etc/fstab"
+    - "echo '[DEFAULT]' > /etc/fail2ban/jail.local"
+    - "echo 'bantime  = 10m' >> /etc/fail2ban/jail.local"
+    - "echo 'findtime  = 10m' >> /etc/fail2ban/jail.local"
+    - "echo 'maxretry = 5' >> /etc/fail2ban/jail.local"
+    - "echo '[sshd]' >> /etc/fail2ban/jail.local"
+    - "echo 'enabled = true' >> /etc/fail2ban/jail.local"
+    - "echo 'port = ssh' >> /etc/fail2ban/jail.local"
+    - "echo 'filter = sshd' >> /etc/fail2ban/jail.local"
+    - "echo 'logpath = /var/log/auth.log' >> /etc/fail2ban/jail.local"
+    - "echo 'maxretry = 3' >> /etc/fail2ban/jail.local"
+    - "echo '[sshd-ddos]' >> /etc/fail2ban/jail.local"
+    - "echo 'enabled = true' >> /etc/fail2ban/jail.local"
+    - "echo 'port = ssh' >> /etc/fail2ban/jail.local"
+    - "echo 'filter = sshd-ddos' >> /etc/fail2ban/jail.local"
+    - "echo 'logpath = /var/log/auth.log' >> /etc/fail2ban/jail.local"
+    - "echo 'maxretry = 2' >> /etc/fail2ban/jail.local"
+    - "echo '[recidive]' >> /etc/fail2ban/jail.local"
+    - "echo 'enabled = true' >> /etc/fail2ban/jail.local"
+    - "echo 'logpath  = /var/log/fail2ban.log' >> /etc/fail2ban/jail.local"
+    - "echo 'bantime  = 1d' >> /etc/fail2ban/jail.local"
+    - "echo 'findtime  = 1d' >> /etc/fail2ban/jail.local"
+    - "echo 'maxretry = 5' >> /etc/fail2ban/jail.local"
+    - "echo 'action = iptables-multiport[name=recidive, port=\"ssh,smtp,imap2,imap3,pop3,pop3s\", protocol=tcp]' >> /etc/fail2ban/jail.local"
+    - "service fail2ban restart"
+    - "echo 'Unattended-Upgrade::Allowed-Origins {\n\t\"${distro_id}:${distro_codename}-security\";\n};' > /etc/apt/apt.conf.d/50unattended-upgrades"
+    - "echo 'APT::Periodic::Update-Package-Lists \"1\";' > /etc/apt/apt.conf.d/20auto-upgrades"
+    - "echo 'APT::Periodic::Unattended-Upgrade \"1\";' >> /etc/apt/apt.conf.d/20auto-upgrades"
+    - "echo 'APT::Periodic::AutocleanInterval \"7\";' >> /etc/apt/apt.conf.d/20auto-upgrades"
+    - "echo 'APT::Periodic::Download-Upgradeable-Packages \"1\";' >> /etc/apt/apt.conf.d/20auto-upgrades"
+    - "wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /etc/openvpn/nordvpn.zip"
+    - "wget -q https://mullvad.net/download/openvpn-config/ -O /etc/openvpn/mullvad.zip"
+    - "wget -q https://protonvpn.com/download/protonvpn.zip -O /etc/openvpn/protonvpn.zip"
+    - "unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn"
+    - "unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad"
+    - "unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn"
+    - "for vpn_file in /etc/openvpn/nordvpn/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name \"nordvpn-$(basename ${vpn_file})\" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0' vpn.secrets 'password=nordvpn_password' vpn.file \"${vpn_file}\"; done"
+    - "for vpn_file in /etc/openvpn/mullvad/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name \"mullvad-$(basename ${vpn_file})\" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0' vpn.secrets 'password=mullvad_password' vpn.file \"${vpn_file}\"; done"
+    - "for vpn_file in /etc/openvpn/protonvpn/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name \"protonvpn-$(basename ${vpn_file})\" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0' vpn.secrets 'password=protonvpn_password' vpn.file \"${vpn_file}\"; done"
+    - "echo '#!/bin/bash' > /etc/network/if-pre-up.d/random-vpn"
+    - "echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /etc/network/if-pre-up.d/random-vpn"
+    - "chmod +x /etc/network/if-pre-up.d/random-vpn"
+    - "echo 'net.ipv4.conf.all.rp_filter=1' | chroot /target"
+    - "echo 'net.ipv4.conf.default.rp_filter=1' | chroot /target"
+    - "echo 'net.ipv4.tcp_syncookies=1' | chroot /target"
+    - "echo 'net.ipv4.conf.all.accept_redirects=0' | chroot /target"
+    - "echo 'net.ipv6.conf.all.accept_redirects=0' | chroot /target"
+    - "echo 'net.ipv4.conf.all.secure_redirects=0' | chroot /target"
+    - "echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' | chroot /target"
+    - "echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' | chroot /target"
+    - "echo 'kernel.randomize_va_space=2' | chroot /target"
+    - "aa-enforce /etc/apparmor.d/* | chroot /target"
+    - "sed -i '/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/' /target/etc/fstab"
+    - "echo 'vm.swappiness=10' | chroot /target"
+    - "echo 'vm.dirty_ratio=20' | chroot /target"
+    - "echo 'vm.dirty_background_ratio=5' | chroot /target"
+    - "echo 'server_names = ['cloudflare']' > /target/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
+    - "echo 'listen_addresses = ['127.0.0.1:53']' >> /target/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
+    - "echo 'require_dnssec = true' >> /target/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
+    - "systemctl enable dnscrypt-proxy | chroot /target"
+    - "systemctl start dnscrypt-proxy | chroot /target"
+    - "echo 'nameserver 127.0.0.1' >> /target/etc/resolv.conf"
+    - "add-apt-repository -y ppa:unit193/encryption"
+    - "apt-get update"
+    - "apt-get install -y veracrypt"
+    - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | apt-key add -"
+    - "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /etc/apt/sources.list.d/signal-xenial.list"
+    - "apt-get update"
+    - "apt-get install -y signal-desktop"
 
