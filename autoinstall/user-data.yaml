@@ -16,12 +16,12 @@ autoinstall:
   identity:
     hostname: secure-user
     username: secure-user
-    password: $6$1L8lElWDK/f/06nd$hhQ.Y4z2zv9MKBn99Y.98aH.aTEhggkoslXA/RdT7zkZ2QiqeHIRvFT2K3Vc7EKYwwFYKPx5LuP89ilP1bTlt0
+    password: $6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/
   ssh:
     install-server: true
     allow-pw: false
     authorized-keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEArI69V... user@example.com"
+      - "SHA256:o47vl96n/V33+zNV65qXrjj3MXKkcXucwXzo5Z/8ywc darkfuckerberg@meta1t0ast3r"
   storage:
     layout:
       name: lvm
