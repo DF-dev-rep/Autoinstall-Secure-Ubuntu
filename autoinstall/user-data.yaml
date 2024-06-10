@@ -14,7 +14,7 @@ autoinstall:
       enp6s0:
         dhcp4: true
   identity:
-    hostname: secure-user
+    hostname: secure-host
     username: secure-user
     password: $6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/
   ssh:
@@ -50,7 +50,6 @@ autoinstall:
     - gnupg
     - brave-browser
     - firejail
-    - dnscrypt-proxy
     - veracrypt
     - signal-desktop
   late-commands:
@@ -128,12 +127,8 @@ autoinstall:
     - "echo 'vm.swappiness=10' >> /etc/sysctl.conf"
     - "echo 'vm.dirty_ratio=20' >> /etc/sysctl.conf"
     - "echo 'vm.dirty_background_ratio=5' >> /etc/sysctl.conf"
-    - "echo 'server_names = [\"cloudflare\"]' > /etc/dnscrypt-proxy/dnscrypt-proxy.toml"
-    - "echo 'listen_addresses = [\"127.0.0.1:53\"]' >> /etc/dnscrypt-proxy/dnscrypt-proxy.toml"
-    - "echo 'require_dnssec = true' >> /etc/dnscrypt-proxy/dnscrypt-proxy.toml"
     - "systemctl enable dnscrypt-proxy"
     - "systemctl start dnscrypt-proxy"
-    - "echo 'nameserver 127.0.0.1' >> /etc/resolv.conf"
     - "add-apt-repository -y ppa:unit193/encryption"
     - "apt-get update"
     - "apt-get install -y veracrypt"
