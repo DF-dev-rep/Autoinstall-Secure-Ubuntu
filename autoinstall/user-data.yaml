@@ -1,6 +1,8 @@
 #cloud-config
 autoinstall:
   version: 1
+  interactive-sections:
+    - storage
   locale: en_GB.UTF-8
   timezone: Europe/London
   keyboard:
@@ -20,6 +22,13 @@ autoinstall:
     allow-pw: false
     authorized-keys:
       - "SHA256:W2xR7pH+FpAzsWDUu6ISgcaEVccBTFSr5hP3FycZAnM darkfuckerberg@meta1.free"
+  storage:
+    layout:
+      name: lvm
+      match:
+        size: largest
+    swap:
+      size: 2048
   packages:
     - ubuntu-desktop
     - ufw
@@ -76,10 +85,10 @@ autoinstall:
     - "fallocate -l 4G /swapfile"
     - "chmod 600 /swapfile"
     - "echo YES | cryptsetup luksFormat /swapfile"
-    - "cryptsetup open /swapfile swapfile"
-    - "mkswap /dev/mapper/swapfile"
-    - "swapon /dev/mapper/swapfile"
-    - "echo '/dev/mapper/swapfile none swap sw 0 0' >> /etc/fstab"
+    - "echo 'cryptsetup open /swapfile cryptswap' >> /etc/rc.local"
+    - "echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab"
+    - "mkswap /dev/mapper/cryptswap"
+    - "swapon /dev/mapper/cryptswap"
     - "echo '[DEFAULT]' > /etc/fail2ban/jail.local"
     - "echo 'bantime  = 10m' >> /etc/fail2ban/jail.local"
     - "echo 'findtime  = 10m' >> /etc/fail2ban/jail.local"
@@ -120,27 +129,29 @@ autoinstall:
     - "for vpn_file in /etc/openvpn/protonvpn/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name \"protonvpn-$(basename ${vpn_file})\" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0' vpn.secrets 'password=protonvpn_password' vpn.file \"${vpn_file}\"; done"
     - "echo '#!/bin/bash' > /etc/network/if-pre-up.d/random-vpn"
     - "echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /etc/network/if-pre-up.d/random-vpn"
+    - "echo 'RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}' >> /etc/network/if-pre-up.d/random-vpn"
+    - "echo 'nmcli con up \"${RANDOM_VPN_FILE}\"' >> /etc/network/if-pre-up.d/random-vpn"
     - "chmod +x /etc/network/if-pre-up.d/random-vpn"
-    - "echo 'net.ipv4.conf.all.rp_filter=1' | chroot /target"
-    - "echo 'net.ipv4.conf.default.rp_filter=1' | chroot /target"
-    - "echo 'net.ipv4.tcp_syncookies=1' | chroot /target"
-    - "echo 'net.ipv4.conf.all.accept_redirects=0' | chroot /target"
-    - "echo 'net.ipv6.conf.all.accept_redirects=0' | chroot /target"
-    - "echo 'net.ipv4.conf.all.secure_redirects=0' | chroot /target"
-    - "echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' | chroot /target"
-    - "echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' | chroot /target"
-    - "echo 'kernel.randomize_va_space=2' | chroot /target"
-    - "aa-enforce /etc/apparmor.d/* | chroot /target"
-    - "sed -i '/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/' /target/etc/fstab"
-    - "echo 'vm.swappiness=10' | chroot /target"
-    - "echo 'vm.dirty_ratio=20' | chroot /target"
-    - "echo 'vm.dirty_background_ratio=5' | chroot /target"
-    - "echo 'server_names = ['cloudflare']' > /target/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
-    - "echo 'listen_addresses = ['127.0.0.1:53']' >> /target/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
-    - "echo 'require_dnssec = true' >> /target/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
-    - "systemctl enable dnscrypt-proxy | chroot /target"
-    - "systemctl start dnscrypt-proxy | chroot /target"
-    - "echo 'nameserver 127.0.0.1' >> /target/etc/resolv.conf"
+    - "echo 'net.ipv4.conf.all.rp_filter=1' >> /etc/sysctl.conf"
+    - "echo 'net.ipv4.conf.default.rp_filter=1' >> /etc/sysctl.conf"
+    - "echo 'net.ipv4.tcp_syncookies=1' >> /etc/sysctl.conf"
+    - "echo 'net.ipv4.conf.all.accept_redirects=0' >> /etc/sysctl.conf"
+    - "echo 'net.ipv6.conf.all.accept_redirects=0' >> /etc/sysctl.conf"
+    - "echo 'net.ipv4.conf.all.secure_redirects=0' >> /etc/sysctl.conf"
+    - "echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' >> /etc/sysctl.conf"
+    - "echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' >> /etc/sysctl.conf"
+    - "echo 'kernel.randomize_va_space=2' >> /etc/sysctl.conf"
+    - "aa-enforce /etc/apparmor.d/*"
+    - "sed -i '/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/' /etc/fstab"
+    - "echo 'vm.swappiness=10' >> /etc/sysctl.conf"
+    - "echo 'vm.dirty_ratio=20' >> /etc/sysctl.conf"
+    - "echo 'vm.dirty_background_ratio=5' >> /etc/sysctl.conf"
+    - "echo 'server_names = [\"cloudflare\"]' > /etc/dnscrypt-proxy/dnscrypt-proxy.toml"
+    - "echo 'listen_addresses = [\"127.0.0.1:53\"]' >> /etc/dnscrypt-proxy/dnscrypt-proxy.toml"
+    - "echo 'require_dnssec = true' >> /etc/dnscrypt-proxy/dnscrypt-proxy.toml"
+    - "systemctl enable dnscrypt-proxy"
+    - "systemctl start dnscrypt-proxy"
+    - "echo 'nameserver 127.0.0.1' >> /etc/resolv.conf"
     - "add-apt-repository -y ppa:unit193/encryption"
     - "apt-get update"
     - "apt-get install -y veracrypt"
