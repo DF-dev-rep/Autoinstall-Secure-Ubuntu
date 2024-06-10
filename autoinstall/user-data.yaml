@@ -21,7 +21,7 @@ autoinstall:
     install-server: true
     allow-pw: false
     authorized-keys:
-      - "SHA256:W2xR7pH+FpAzsWDUu6ISgcaEVccBTFSr5hP3FycZAnM darkfuckerberg@meta1.free"
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEArI69V... user@example.com"
   storage:
     layout:
       name: lvm
@@ -39,9 +39,6 @@ autoinstall:
     - cryptsetup
     - vim
     - curl
-    - postfix
-    - mutt
-    - psad
     - notesnook
     - torbrowser-launcher
     - secure-delete
@@ -57,8 +54,6 @@ autoinstall:
     - veracrypt
     - signal-desktop
   late-commands:
-    - "sed -i 's/temporary-hostname/$(hostname)/g' /etc/hosts"
-    - "sed -i 's/temporary-hostname/$(hostname)/g' /etc/hostname"
     - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf"
     - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf"
     - "echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf"
@@ -69,26 +64,13 @@ autoinstall:
     - "ufw allow from any to any port 1194 proto udp"
     - "ufw allow 22/tcp"
     - "ufw enable"
-    - "debconf-set-selections <<< 'postfix postfix/main_mailer_type select Local only'"
-    - "debconf-set-selections <<< 'postfix postfix/mailname string $(hostname).localdomain'"
-    - "debconf-set-selections <<< 'postfix postfix/myhostname string $(hostname).localdomain'"
-    - "service postfix restart"
-    - "sed -i 's/EMAIL_ADDRESSES SecurityLogs@temporary-hostname.localdomain/EMAIL_ADDRESSES SecurityLogs@$(hostname).localdomain/' /etc/psad/psad.conf"
-    - "service psad restart"
-    - "echo 'set mbox_type=Maildir' >> /home/secureuser/.muttrc"
-    - "echo 'set folder=~/Mail' >> /home/secureuser/.muttrc"
-    - "echo 'set spoolfile=~/Mail/inbox' >> /home/secureuser/.muttrc"
-    - "echo 'set postponed=~/Mail/drafts' >> /home/secureuser/.muttrc"
-    - "echo 'set header_cache=~/.mutt/cache/headers' >> /home/secureuser/.muttrc"
-    - "echo 'set message_cachedir=~/.mutt/cache/bodies' >> /home/secureuser/.muttrc"
-    - "echo 'set certificate_file=~/.mutt/certificates' >> /home/secureuser/.muttrc"
     - "fallocate -l 4G /swapfile"
     - "chmod 600 /swapfile"
     - "echo YES | cryptsetup luksFormat /swapfile"
-    - "echo 'cryptsetup open /swapfile cryptswap' >> /etc/rc.local"
-    - "echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab"
+    - "cryptsetup open /swapfile cryptswap"
     - "mkswap /dev/mapper/cryptswap"
     - "swapon /dev/mapper/cryptswap"
+    - "echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab"
     - "echo '[DEFAULT]' > /etc/fail2ban/jail.local"
     - "echo 'bantime  = 10m' >> /etc/fail2ban/jail.local"
     - "echo 'findtime  = 10m' >> /etc/fail2ban/jail.local"
@@ -112,7 +94,7 @@ autoinstall:
     - "echo 'findtime  = 1d' >> /etc/fail2ban/jail.local"
     - "echo 'maxretry = 5' >> /etc/fail2ban/jail.local"
     - "echo 'action = iptables-multiport[name=recidive, port=\"ssh,smtp,imap2,imap3,pop3,pop3s\", protocol=tcp]' >> /etc/fail2ban/jail.local"
-    - "service fail2ban restart"
+    - "systemctl restart fail2ban"
     - "echo 'Unattended-Upgrade::Allowed-Origins {\n\t\"${distro_id}:${distro_codename}-security\";\n};' > /etc/apt/apt.conf.d/50unattended-upgrades"
     - "echo 'APT::Periodic::Update-Package-Lists \"1\";' > /etc/apt/apt.conf.d/20auto-upgrades"
     - "echo 'APT::Periodic::Unattended-Upgrade \"1\";' >> /etc/apt/apt.conf.d/20auto-upgrades"
