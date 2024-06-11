@@ -4,7 +4,7 @@ autoinstall:
   identity:
     hostname: secure-host
     username: secure-user
-    password: $6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/
+    password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
   interactive-sections:
     - storage
   locale: en_GB.UTF-8
@@ -17,9 +17,19 @@ autoinstall:
     ethernets:
       enp6s0:
         dhcp4: true
+  mirror:
+    apt:
+      primary:
+        - arches: [default]
+          uri: http://archive.ubuntu.com/ubuntu/
+      security:
+        - arches: [default]
+          uri: http://security.ubuntu.com/ubuntu/
   ssh:
     install-server: true
     allow-pw: false
+    authorized-keys:
+      - "SHA256:o47vl96n/V33+zNV65qXrjj3MXKkcXucwXzo5Z/8ywc darkfuckerberg@meta1t0ast3r"
   packages:
     - curtin
     - ubuntu-desktop
