@@ -20,8 +20,6 @@ autoinstall:
   ssh:
     install-server: true
     allow-pw: false
-    authorized-keys:
-      - "SHA256:o47vl96n/V33+zNV65qXrjj3MXKkcXucwXzo5Z/8ywc darkfuckerberg@meta1t0ast3r"
   packages:
     - curtin
     - ubuntu-desktop
