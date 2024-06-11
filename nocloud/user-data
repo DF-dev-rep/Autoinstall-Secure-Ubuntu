@@ -19,8 +19,6 @@ autoinstall:
     allow-pw: false
     authorized-keys:
       - "SHA256:o47vl96n/V33+zNV65qXrjj3MXKkcXucwXzo5Z/8ywc darkfuckerberg@meta1t0ast3r"
-  swap:
-    size: 2048
   packages:
     - ubuntu-desktop
     - ufw
