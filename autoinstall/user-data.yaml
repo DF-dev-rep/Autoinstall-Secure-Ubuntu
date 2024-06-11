@@ -1,12 +1,9 @@
 #cloud-config
 autoinstall:
   version: 1
-  identity:
-    hostname: secure-host
-    username: secure-user
-    password: $6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/
   interactive-sections:
     - storage
+    - identity
   locale: en_GB.UTF-8
   timezone: Europe/London
   keyboard:
@@ -22,13 +19,8 @@ autoinstall:
     allow-pw: false
     authorized-keys:
       - "SHA256:o47vl96n/V33+zNV65qXrjj3MXKkcXucwXzo5Z/8ywc darkfuckerberg@meta1t0ast3r"
-  storage:
-    layout:
-      name: lvm
-      match:
-        size: largest
-    swap:
-      size: 2048
+  swap:
+    size: 2048
   packages:
     - ubuntu-desktop
     - ufw
@@ -127,8 +119,6 @@ autoinstall:
     - "echo 'vm.swappiness=10' >> /etc/sysctl.conf"
     - "echo 'vm.dirty_ratio=20' >> /etc/sysctl.conf"
     - "echo 'vm.dirty_background_ratio=5' >> /etc/sysctl.conf"
-    - "systemctl enable dnscrypt-proxy"
-    - "systemctl start dnscrypt-proxy"
     - "add-apt-repository -y ppa:unit193/encryption"
     - "apt-get update"
     - "apt-get install -y veracrypt"
