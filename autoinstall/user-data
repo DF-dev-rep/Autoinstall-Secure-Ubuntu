@@ -144,6 +144,6 @@ autoinstall:
     - "echo 'vm.dirty_background_ratio=5' >> /etc/sysctl.conf"
     - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | apt-key add -"
     - "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /etc/apt/sources.list.d/signal-xenial.list"
-    - "apt-get update"
+    - "chroot /target apt-get update"
     - "shutdown -h now"
 
