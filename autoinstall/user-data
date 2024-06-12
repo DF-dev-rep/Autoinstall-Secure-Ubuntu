@@ -11,20 +11,22 @@ autoinstall:
   network:
     version: 2
     ethernets:
-      eth0:
+      id0:
+        match:
+          name: "en*"
+        dhcp4: true
+      id1:
+        match:
+          name: "eth*"
         dhcp4: true
   locale: en_GB.UTF-8
   timezone: Europe/London
   keyboard:
     layout: us
-  identity:  # This is section you may want to add to interactive-sections  (user name and password are ubuntu here)
+  identity:
     hostname: secure-host
     username: secure-user
     password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
-  apt:
-    sources:
-      graphics-drivers-ppa:  # This is here to get the yaml formatting right when adding a ppa
-        source: ppa:graphics-drivers/ppa
   packages:
     - build-essential
     - network-manager
@@ -84,12 +86,4 @@ autoinstall:
       - [apt, autoremove, --yes]
       - [apt-get, install, --yes,  nvidia-driver-570] #, --no-install-recommends]
       - [sudo, -u, ubuntu, dbus-launch, gsettings, set, org.gnome.desktop.background, picture-uri, file:///usr/share/backgrounds/Puget_Systems.png]
-      # - |
-      #   #!/usr/bin/env bash
-      #   echo ''
-      #   echo '***************************************'
-      #   echo ' To complete install setup please run, '
-      #   echo ' sudo /etc/finish-install-setup.sh'
-      #   echo '***************************************'
-      #   echo ''
 
