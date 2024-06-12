@@ -1,19 +1,30 @@
 #cloud-config
 autoinstall:
   version: 1
+
+  # Identity and user creation
   identity:
     hostname: secure-host
     username: secure-user
     password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
-  interactive-sections:
-    - storage
+
+  # Storage configuration
+  storage:
+    layout:
+      name: direct
+
+  # Locale and timezone configuration
   locale: en_GB.UTF-8
   timezone: Europe/London
+
+  # Network configuration
   network:
     version: 2
     ethernets:
       enp6s0:
         dhcp4: true
+
+  # Repositories and packages
   mirror:
     apt:
       primary:
@@ -29,8 +40,10 @@ autoinstall:
         - arches: [default]
           uri: http://archive.ubuntu.com/ubuntu/
           suite: multiverse
+
+  # Packages to install
   packages:
-    - snapd
+    - ubuntu-desktop
     - gufw
     - fail2ban
     - apparmor
@@ -44,106 +57,162 @@ autoinstall:
     - gnupg
     - openvpn
     - unattended-upgrades
-    - gnome-tweaks
-    - keepassxc
     - kleopatra
-    - signal-desktop
     - firejail
-    - brave-browser
+
+  # Snaps to install
   snaps:
+    - name: firefox
+    - name: gnome-3-38-2004
+    - name: gtk-common-themes
+    - name: snap-store
+    - name: snapd-desktop-integration
     - name: notesnook
     - name: torbrowser-launcher
     - name: veracrypt
+    - name: gnome-tweaks
+    - name: signal-desktop
+    - name: keepassxc
+    - name: brave
+
+  # Early commands
+  early-commands:
+    - echo 'linux-generic-hwe-24.04' > /run/kernel-meta-package
+
+  # Late commands
   late-commands:
     - "chroot /target apt-get update"
     - "chroot /target add-apt-repository -y ppa:unit193/encryption"
     - "chroot /target add-apt-repository -y ppa:ubuntu-desktop/ppa"
     - "chroot /target apt-get update"
     - "chroot /target apt-get install -y ubuntu-desktop"
-    - "chroot /target apt-get install -y veracrypt"
-    - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf"
-    - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf"
-    - "echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf"
-    - "gufw default deny incoming"
-    - "gufw default allow outgoing"
-    - "gufw allow from any to any port 1194 proto udp"
-    - "gufw allow 22/tcp"
-    - "gufw enable"
-    - "fallocate -l 4G /swapfile"
-    - "chmod 600 /swapfile"
-    - "echo YES | cryptsetup luksFormat /swapfile"
-    - "cryptsetup open /swapfile cryptswap"
-    - "mkswap /dev/mapper/cryptswap"
-    - "swapon /dev/mapper/cryptswap"
-    - "echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab"
-    - "echo '[DEFAULT]' > /etc/fail2ban/jail.local"
-    - "echo 'bantime  = 10m' >> /etc/fail2ban/jail.local"
-    - "echo 'findtime  = 10m' >> /etc/fail2ban/jail.local"
-    - "echo 'maxretry = 5' >> /etc/fail2ban/jail.local"
-    - "echo '[sshd]' >> /etc/fail2ban/jail.local"
-    - "echo 'enabled = true' >> /etc/fail2ban/jail.local"
-    - "echo 'port = ssh' >> /etc/fail2ban/jail.local"
-    - "echo 'filter = sshd' >> /etc/fail2ban/jail.local"
-    - "echo 'logpath = /var/log/auth.log' >> /etc/fail2ban/jail.local"
-    - "echo 'maxretry = 3' >> /etc/fail2ban/jail.local"
-    - "echo '[sshd-ddos]' >> /etc/fail2ban/jail.local"
-    - "echo 'enabled = true' >> /etc/fail2ban/jail.local"
-    - "echo 'port = ssh' >> /etc/fail2ban/jail.local"
-    - "echo 'filter = sshd-ddos' >> /etc/fail2ban/jail.local"
-    - "echo 'logpath = /var/log/auth.log' >> /etc/fail2ban/jail.local"
-    - "echo 'maxretry = 2' >> /etc/fail2ban/jail.local"
-    - "echo '[recidive]' >> /etc/fail2ban/jail.local"
-    - "echo 'enabled = true' >> /etc/fail2ban/jail.local"
-    - "echo 'logpath  = /var/log/fail2ban.log' >> /etc/fail2ban/jail.local"
-    - "echo 'bantime  = 1d' >> /etc/fail2ban/jail.local"
-    - "echo 'findtime  = 1d' >> /etc/fail2ban/jail.local"
-    - "echo 'maxretry = 5' >> /etc/fail2ban/jail.local"
-    - "echo 'action = iptables-multiport[name=recidive, port=\"ssh,smtp,imap2,imap3,pop3,pop3s\", protocol=tcp]' >> /etc/fail2ban/jail.local"
-    - "systemctl restart fail2ban"
-    - "echo 'Unattended-Upgrade::Allowed-Origins {\n\t\"${distro_id}:${distro_codename}-security\";\n};' > /etc/apt/apt.conf.d/50unattended-upgrades"
-    - "echo 'APT::Periodic::Update-Package-Lists \"1\";' > /etc/apt/apt.conf.d/20auto-upgrades"
-    - "echo 'APT::Periodic::Unattended-Upgrade \"1\";' >> /etc/apt/apt.conf.d/20auto-upgrades"
-    - "echo 'APT::Periodic::AutocleanInterval \"7\";' >> /etc/apt/apt.conf.d/20auto-upgrades"
-    - "echo 'APT::Periodic::Download-Upgradeable-Packages \"1\";' >> /etc/apt/apt.conf.d/20auto-upgrades"
-    - "wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /etc/openvpn/nordvpn.zip"
-    - "wget -q https://mullvad.net/download/openvpn-config/ -O /etc/openvpn/mullvad.zip"
-    - "wget -q https://protonvpn.com/download/protonvpn.zip -O /etc/openvpn/protonvpn.zip"
-    - "unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn"
-    - "unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad"
-    - "unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn"
-    - |
-      for vpn_file in /etc/openvpn/nordvpn/*.ovpn; do
-        nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0' vpn.secrets 'password=nordvpn_password' vpn.file "${vpn_file}";
-      done
-    - |
-      for vpn_file in /etc/openvpn/mullvad/*.ovpn; do
-        nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0' vpn.secrets 'password=mullvad_password' vpn.file "${vpn_file}";
-      done
-    - |
-      for vpn_file in /etc/openvpn/protonvpn/*.ovpn; do
-        nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0' vpn.secrets 'password=protonvpn_password' vpn.file "${vpn_file}";
-      done
-    - "echo '#!/bin/bash' > /etc/network/if-pre-up.d/random-vpn"
-    - "echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /etc/network/if-pre-up.d/random-vpn"
-    - "echo 'RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}' >> /etc/network/if-pre-up.d/random-vpn"
-    - "echo 'nmcli con up \"${RANDOM_VPN_FILE}\"' >> /etc/network/if-pre-up.d/random-vpn"
-    - "chmod +x /etc/network/if-pre-up.d/random-vpn"
-    - "echo 'net.ipv4.conf.all.rp_filter=1' >> /etc/sysctl.conf"
-    - "echo 'net.ipv4.conf.default.rp_filter=1' >> /etc/sysctl.conf"
-    - "echo 'net.ipv4.tcp_syncookies=1' >> /etc/sysctl.conf"
-    - "echo 'net.ipv4.conf.all.accept_redirects=0' >> /etc/sysctl.conf"
-    - "echo 'net.ipv6.conf.all.accept_redirects=0' >> /etc/sysctl.conf"
-    - "echo 'net.ipv4.conf.all.secure_redirects=0' >> /etc/sysctl.conf"
-    - "echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' >> /etc/sysctl.conf"
-    - "echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' >> /etc/sysctl.conf"
-    - "echo 'kernel.randomize_va_space=2' >> /etc/sysctl.conf"
-    - "aa-enforce /etc/apparmor.d/*"
-    - "sed -i '/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/' /etc/fstab"
-    - "echo 'vm.swappiness=10' >> /etc/sysctl.conf"
-    - "echo 'vm.dirty_ratio=20' >> /etc/sysctl.conf"
-    - "echo 'vm.dirty_background_ratio=5' >> /etc/sysctl.conf"
+    - "chroot /target apt-get install -y gufw fail2ban apparmor apparmor-profiles apparmor-utils cryptsetup vim curl secure-delete wipe gnupg openvpn unattended-upgrades kleopatra firejail"
+
+    # Enable the boot splash
+    - "curtin in-target -- sed -i /etc/default/grub -e 's/GRUB_CMDLINE_LINUX_DEFAULT=\".*/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"/'"
+    - "curtin in-target -- update-grub"
+
+    # Let NetworkManager handle network
+    - "rm /target/etc/netplan/00-installer-config*yaml"
+    - "printf 'network:\n  version: 2\n  renderer: NetworkManager\n' > /target/etc/netplan/01-network-manager-all.yaml"
+
+    # Remove default filesystem and related tools not used with the suggested 'direct' storage layout.
+    - "curtin in-target -- apt-get remove -y btrfs-progs cryptsetup* lvm2 xfsprogs"
+
+    # Remove other packages present by default in Ubuntu Server but not normally present in Ubuntu Desktop.
+    - "curtin in-target -- apt-get remove -y ubuntu-server ubuntu-server-minimal binutils byobu curl dmeventd finalrd gawk kpartx mdadm ncurses-term needrestart open-iscsi openssh-server sg3-utils ssh-import-id sssd thin-provisioning-tools vim tmux sosreport screen open-vm-tools motd-news-config lxd-agent-loader landscape-common htop git fonts-ubuntu-console ethtool"
+
+    # Keep cloud-init, as it performs some of the installation on first boot.
+    - "curtin in-target -- apt-get install -y cloud-init"
+
+    # Finally, remove things only installed as dependencies of other things we have already removed.
+    - "curtin in-target -- apt-get autoremove -y"
+
+    # Install signal repository
     - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | apt-key add -"
-    - "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /etc/apt/sources.list.d/signal-xenial.list"
+    - "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /target/etc/apt/sources.list.d/signal-xenial.list"
     - "chroot /target apt-get update"
-    - "shutdown -h now"
+
+    # Disable IPv6
+    - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
+    - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
+    - "echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
+
+    # GUFW firewall rules
+    - "chroot /target gufw default deny incoming"
+    - "chroot /target gufw default allow outgoing"
+    - "chroot /target gufw allow from any to any port 1194 proto udp"
+    - "chroot /target gufw allow 22/tcp"
+    - "chroot /target gufw enable"
+
+    # Swapfile creation and encryption
+    - "fallocate -l 4G /target/swapfile"
+    - "chmod 600 /target/swapfile"
+    - "echo YES | chroot /target cryptsetup luksFormat /swapfile"
+    - "chroot /target cryptsetup open /swapfile cryptswap"
+    - "chroot /target mkswap /dev/mapper/cryptswap"
+    - "chroot /target swapon /dev/mapper/cryptswap"
+    - "echo '/dev/mapper/cryptswap none swap sw 0 0' >> /target/etc/fstab"
+
+    # Fail2Ban configuration
+    - "echo '[DEFAULT]' > /target/etc/fail2ban/jail.local"
+    - "echo 'bantime  = 10m' >> /target/etc/fail2ban/jail.local"
+    - "echo 'findtime  = 10m' >> /target/etc/fail2ban/jail.local"
+    - "echo 'maxretry = 5' >> /target/etc/fail2ban/jail.local"
+    - "echo '[sshd]' >> /target/etc/fail2ban/jail.local"
+    - "echo 'enabled = true' >> /target/etc/fail2ban/jail.local"
+    - "echo 'port = ssh' >> /target/etc/fail2ban/jail.local"
+    - "echo 'filter = sshd' >> /target/etc/fail2ban/jail.local"
+    - "echo 'logpath = /var/log/auth.log' >> /target/etc/fail2ban/jail.local"
+    - "echo 'maxretry = 3' >> /target/etc/fail2ban/jail.local"
+    - "echo '[sshd-ddos]' >> /target/etc/fail2ban/jail.local"
+    - "echo 'enabled = true' >> /target/etc/fail2ban/jail.local"
+    - "echo 'port = ssh' >> /target/etc/fail2ban/jail.local"
+    - "echo 'filter = sshd-ddos' >> /target/etc/fail2ban/jail.local"
+    - "echo 'logpath = /var/log/auth.log' >> /target/etc/fail2ban/jail.local"
+    - "echo 'maxretry = 2' >> /target/etc/fail2ban/jail.local"
+    - "echo '[recidive]' >> /target/etc/fail2ban/jail.local"
+    - "echo 'enabled = true' >> /target/etc/fail2ban/jail.local"
+    - "echo 'logpath  = /var/log/fail2ban.log' >> /target/etc/fail2ban/jail.local"
+    - "echo 'bantime  = 1d' >> /target/etc/fail2ban/jail.local"
+    - "echo 'findtime  = 1d' >> /target/etc/fail2ban/jail.local"
+    - "echo 'maxretry = 5' >> /target/etc/fail2ban/jail.local"
+    - "echo 'action = iptables-multiport[name=recidive, port=\"ssh,smtp,imap2,imap3,pop3,pop3s\", protocol=tcp]' >> /target/etc/fail2ban/jail.local"
+    - "chroot /target systemctl restart fail2ban"
+
+    # Unattended-upgrades configuration
+    - "echo 'Unattended-Upgrade::Allowed-Origins {\n\t\"${distro_id}:${distro_codename}-security\";\n};' > /target/etc/apt/apt.conf.d/50unattended-upgrades"
+    - "echo 'APT::Periodic::Update-Package-Lists \"1\";' > /target/etc/apt/apt.conf.d/20auto-upgrades"
+    - "echo 'APT::Periodic::Unattended-Upgrade \"1\";' >> /target/etc/apt/apt.conf.d/20auto-upgrades"
+    - "echo 'APT::Periodic::AutocleanInterval \"7\";' >> /target/etc/apt/apt.conf.d/20auto-upgrades"
+    - "echo 'APT::Periodic::Download-Upgradeable-Packages \"1\";' >> /target/etc/apt/apt.conf.d/20auto-upgrades"
+
+    # VPN configurations
+    - "wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /target/etc/openvpn/nordvpn.zip"
+    - "wget -q https://mullvad.net/download/openvpn-config/ -O /target/etc/openvpn/mullvad.zip"
+    - "wget -q https://protonvpn.com/download/protonvpn.zip -O /target/etc/openvpn/protonvpn.zip"
+    - "unzip /target/etc/openvpn/nordvpn.zip -d /target/etc/openvpn/nordvpn"
+    - "unzip /target/etc/openvpn/mullvad.zip -d /target/etc/openvpn/mullvad"
+    - "unzip /target/etc/openvpn/protonvpn.zip -d /target/etc/openvpn/protonvpn"
+    - |
+      for vpn_file in /target/etc/openvpn/nordvpn/*.ovpn; do
+        chroot /target nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0' vpn.secrets 'password=nordvpn_password' vpn.file "${vpn_file}";
+      done
+    - |
+      for vpn_file in /target/etc/openvpn/mullvad/*.ovpn; do
+        chroot /target nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0' vpn.secrets 'password=mullvad_password' vpn.file "${vpn_file}";
+      done
+    - |
+      for vpn_file in /target/etc/openvpn/protonvpn/*.ovpn; do
+        chroot /target nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0' vpn.secrets 'password=protonvpn_password' vpn.file "${vpn_file}";
+      done
+    - "echo '#!/bin/bash' > /target/etc/network/if-pre-up.d/random-vpn"
+    - "echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /target/etc/network/if-pre-up.d/random-vpn"
+    - "echo 'RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}' >> /target/etc/network/if-pre-up.d/random-vpn"
+    - "echo 'nmcli con up \"${RANDOM_VPN_FILE}\"' >> /target/etc/network/if-pre-up.d/random-vpn"
+    - "chmod +x /target/etc/network/if-pre-up.d/random-vpn"
+
+    # Additional sysctl configurations
+    - "echo 'net.ipv4.conf.all.rp_filter=1' >> /target/etc/sysctl.conf"
+    - "echo 'net.ipv4.conf.default.rp_filter=1' >> /target/etc/sysctl.conf"
+    - "echo 'net.ipv4.tcp_syncookies=1' >> /target/etc/sysctl.conf"
+    - "echo 'net.ipv4.conf.all.accept_redirects=0' >> /target/etc/sysctl.conf"
+    - "echo 'net.ipv6.conf.all.accept_redirects=0' >> /target/etc/sysctl.conf"
+    - "echo 'net.ipv4.conf.all.secure_redirects=0' >> /target/etc/sysctl.conf"
+    - "echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' >> /target/etc/sysctl.conf"
+    - "echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' >> /target/etc/sysctl.conf"
+    - "echo 'kernel.randomize_va_space=2' >> /target/etc/sysctl.conf"
+    - "aa-enforce /target/etc/apparmor.d/*"
+    - "sed -i '/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/' /target/etc/fstab"
+    - "echo 'vm.swappiness=10' >> /target/etc/sysctl.conf"
+    - "echo 'vm.dirty_ratio=20' >> /target/etc/sysctl.conf"
+    - "echo 'vm.dirty_background_ratio=5' >> /target/etc/sysctl.conf"
+
+  # Additional user-data configuration
+  user-data:
+    disable_root: false
+    ssh:
+      install-server: true
+    users:
+      - default
 
