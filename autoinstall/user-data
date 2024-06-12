@@ -30,6 +30,11 @@ autoinstall:
         - arches: [default]
           uri: http://archive.ubuntu.com/ubuntu/
           suite: multiverse
+  early-commands:
+    - "echo 'Adding necessary repositories'"
+    - "apt-add-repository -y ppa:unit193/encryption"
+    - "apt-add-repository -y ppa:ubuntu-desktop/ppa"
+    - "apt-get update"
   packages:
     - snapd
     - fail2ban
@@ -55,10 +60,8 @@ autoinstall:
     - name: gufw
   late-commands:
     - "chroot /target apt-get update"
-    - "chroot /target add-apt-repository -y ppa:unit193/encryption"
-    - "chroot /target add-apt-repository -y ppa:ubuntu-desktop/ppa"
-    - "chroot /target apt-get update"
     - "chroot /target apt-get install -y ubuntu-desktop"
+    - "chroot /target apt-get update"
     - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf"
     - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf"
     - "echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf"
