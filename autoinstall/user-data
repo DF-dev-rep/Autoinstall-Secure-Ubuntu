@@ -31,18 +31,8 @@ autoinstall:
         suite: multiverse
   packages:
     - snapd
-    - apparmor
-    - apparmor-profiles
-    - apparmor-utils
-    - cryptsetup
     - vim
     - curl
-    - secure-delete
-    - wipe
-    - gnupg
-    - openvpn
-    - unattended-upgrades
-    - gnome-tweaks
   snaps:
     - name: notesnook
     - name: torbrowser-launcher
@@ -51,12 +41,25 @@ autoinstall:
     - name: signal-desktop
     - name: brave
     - name: gufw
+  early-commands:
+    - "echo 'Updating sources and repositories'"
+    - "chroot /target apt-get update"
+    - "chroot /target apt-get upgrade -y"
   late-commands:
     - "chroot /target apt-add-repository -y ppa:unit193/encryption"
     - "chroot /target apt-add-repository -y ppa:ubuntu-desktop/ppa"
     - "chroot /target apt-get update"
+    - "chroot /target apt-get install -y linux-generic-hwe-24.04 || echo 'HWE kernel not found' >> /target/root/install_errors.log || true"
     - "chroot /target apt-get install -y ubuntu-desktop || echo 'ubuntu-desktop not found' >> /target/root/install_errors.log || true"
+    - "chroot /target apt-get install -y apparmor apparmor-profiles apparmor-utils || echo 'apparmor packages not found' >> /target/root/install_errors.log || true"
     - "chroot /target apt-get install -y fail2ban || echo 'fail2ban not found' >> /target/root/install_errors.log || true"
+    - "chroot /target apt-get install -y gufw || echo 'gufw not found' >> /target/root/install_errors.log || true"
+    - "chroot /target apt-get install -y unattended-upgrades || echo 'unattended-upgrades not found' >> /target/root/install_errors.log || true"
+    - "chroot /target apt-get install -y gnome-tweaks || echo 'gnome-tweaks not found' >> /target/root/install_errors.log || true"
+    - "chroot /target apt-get install -y openvpn || echo 'openvpn not found' >> /target/root/install_errors.log || true"
+    - "chroot /target apt-get install -y secure-delete || echo 'secure-delete not found' >> /target/root/install_errors.log || true"
+    - "chroot /target apt-get install -y wipe || echo 'wipe not found' >> /target/root/install_errors.log || true"
+    - "chroot /target apt-get install -y gnupg || echo 'gnupg not found' >> /target/root/install_errors.log || true"
     - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
     - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
     - "echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
