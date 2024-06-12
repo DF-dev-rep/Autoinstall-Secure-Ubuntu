@@ -8,6 +8,11 @@ autoinstall:
   storage:  # should set the interactive default but doesn't seem to work??
     layout:
       name: direct
+  network:
+    version: 2
+    ethernets:
+      eth0:
+        dhcp4: true
   locale: en_GB.UTF-8
   timezone: Europe/London
   keyboard:
@@ -16,8 +21,6 @@ autoinstall:
     hostname: secure-host
     username: secure-user
     password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
-  network:
-    config: disabled  # Disables the default network configuration
   apt:
     sources:
       graphics-drivers-ppa:  # This is here to get the yaml formatting right when adding a ppa
@@ -44,8 +47,6 @@ autoinstall:
     - ufw
     - openvpn
   snaps: []
-  package_update: true
-  package_upgrade: true
   late-commands:
     # Changing from networkd to NetworkManager
     # move existing config out of the way
