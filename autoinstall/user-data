@@ -51,12 +51,9 @@ autoinstall:
     - name: signal-desktop
     - name: brave
     - name: gufw
-  early-commands:
-    - "echo 'Adding necessary repositories'"
+  late-commands:
     - "chroot /target apt-add-repository -y ppa:unit193/encryption"
     - "chroot /target apt-add-repository -y ppa:ubuntu-desktop/ppa"
-    - "chroot /target apt-get update"
-  late-commands:
     - "chroot /target apt-get update"
     - "chroot /target apt-get install -y ubuntu-desktop || echo 'ubuntu-desktop not found' >> /target/root/install_errors.log || true"
     - "chroot /target apt-get install -y fail2ban || echo 'fail2ban not found' >> /target/root/install_errors.log || true"
