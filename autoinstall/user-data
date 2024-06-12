@@ -1,222 +1,100 @@
 #cloud-config
 autoinstall:
   version: 1
-
-  # Identity and user creation
-  identity:
+  refresh-installer:  # start with an up-to-date installer
+  update: yes
+  interactive-sections:  # Install groups listed here will wait for user input
+    - storage
+  storage:  # should set the interactive default but doesn't seem to work??
+    layout:
+      name: direct
+  locale: en_GB.UTF-8
+  timezone: Europe/London
+  keyboard:
+    layout: us
+  identity:  # This is section you may want to add to interactive-sections  (user name and password are ubuntu here)
     hostname: secure-host
     username: secure-user
     password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
-
-  # Interactive selection for drive and partitioning
-  interactive-sections:
-    - storage
-
-  # Locale and timezone configuration
-  locale: en_GB.UTF-8
-  timezone: Europe/London
-
-  # Network configuration
   network:
     version: 2
     ethernets:
       enp6s0:
         dhcp4: true
-
-  # Package repositories
-  sources:
-    ubuntu:
-      source: "http://archive.ubuntu.com/ubuntu"
-      suites: 
-        - main
-        - universe
-        - multiverse
-        - restricted
-    ubuntu-updates:
-      source: "http://archive.ubuntu.com/ubuntu"
-      suites: 
-        - focal-updates/main
-        - focal-updates/universe
-        - focal-updates/multiverse
-        - focal-updates/restricted
-    ubuntu-security:
-      source: "http://security.ubuntu.com/ubuntu"
-      suites: 
-        - focal-security/main
-        - focal-security/universe
-        - focal-security/multiverse
-        - focal-security/restricted
-    ubuntu-desktop:
-      source: "http://ppa.launchpad.net/ubuntu-desktop/ppa/ubuntu"
-      suites: 
-        - focal
-    gnome3-team:
-      source: "http://ppa.launchpad.net/gnome3-team/gnome3/ubuntu"
-      suites: 
-        - focal
-    graphics-drivers:
-      source: "http://ppa.launchpad.net/graphics-drivers/ppa/ubuntu"
-      suites: 
-        - focal
-
-  # Packages to install
+  apt:
+    sources:
+      graphics-drivers-ppa:  # This is here to get the yaml formatting right when adding a ppa
+        source: ppa:graphics-drivers/ppa
+      unit193-encryption:
+        source: ppa:unit193/encryption
+      ubuntu-desktop-ppa:
+        source: ppa:ubuntu-desktop/ppa
   packages:
-    - fail2ban
+    - build-essential
+    - network-manager
+    - dkms
+    - emacs-nox
+    - ubuntu-desktop-minimal
     - apparmor
-    - apparmor-profiles
     - apparmor-utils
     - vim
-    - secure-delete
-    - wipe
     - gnupg
-    - openvpn
-    - ufw
-
-  # Snaps to install
-  snaps:
-    - name: firefox
-    - name: gnome-3-38-2004
-    - name: gtk-common-themes
-    - name: snap-store
-    - name: snapd-desktop-integration
-    - name: notesnook
-    - name: torbrowser-launcher
-    - name: veracrypt
-    - name: gnome-tweaks
-    - name: signal-desktop
-    - name: keepassxc
-    - name: brave
-
-  # Boot commands
-  bootcmd:
-    - apt-get update
-    - apt-get upgrade -y
-
-  # Late commands
+    - firefox
+    - gnome-shell
+    - gnome-software
+    - gnome-tweaks
+    - torbrowser-launcher
+    - keepassxc
+  snaps: []
+  package_update: true
+  package_upgrade: true
+  early-commands:
+    - curtin in-target --target=/target -- apt-get update
+    - curtin in-target --target=/target -- apt-get upgrade -y
   late-commands:
-    - "chroot /target add-apt-repository -y ppa:unit193/encryption"
-    - "chroot /target apt-get update"
-    - "chroot /target apt-get install -y ubuntu-desktop kleopatra firejail unattended-upgrades cryptsetup curl"
-
-    # Enable the boot splash
-    - "curtin in-target -- sed -i /etc/default/grub -e 's/GRUB_CMDLINE_LINUX_DEFAULT=\".*/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"/'"
-    - "curtin in-target -- update-grub"
-
-    # Let NetworkManager handle network
-    - "rm /target/etc/netplan/00-installer-config*yaml"
-    - "printf 'network:\n  version: 2\n  renderer: NetworkManager\n' > /target/etc/netplan/01-network-manager-all.yaml"
-
-    # Remove default filesystem and related tools not used with the suggested 'direct' storage layout.
-    - "curtin in-target -- apt-get remove -y btrfs-progs lvm2 xfsprogs"
-
-    # Remove other packages present by default in Ubuntu Server but not normally present in Ubuntu Desktop.
-    - "curtin in-target -- apt-get remove -y ubuntu-server ubuntu-server-minimal binutils byobu dmeventd finalrd gawk kpartx mdadm ncurses-term needrestart open-iscsi openssh-server sg3-utils ssh-import-id sssd thin-provisioning-tools vim tmux sosreport screen open-vm-tools motd-news-config lxd-agent-loader landscape-common htop git fonts-ubuntu-console ethtool"
-
-    # Keep cloud-init, as it performs some of the installation on first boot.
-    - "curtin in-target -- apt-get install -y cloud-init"
-
-    # Finally, remove things only installed as dependencies of other things we have already removed.
-    - "curtin in-target -- apt-get autoremove -y"
-
-    # Install signal repository
-    - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | chroot /target apt-key add -"
-    - "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /target/etc/apt/sources.list.d/signal-xenial.list"
-    - "chroot /target apt-get update"
-
-    # Disable IPv6
-    - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
-    - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
-    - "echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
-
-    # UFW firewall rules
-    - "chroot /target ufw default deny incoming"
-    - "chroot /target ufw default allow outgoing"
-    - "chroot /target ufw allow 1194/udp"
-    - "chroot /target ufw allow 22/tcp"
-    - "chroot /target ufw enable"
-
-    # Fail2Ban configuration
-    - "echo '[DEFAULT]' > /target/etc/fail2ban/jail.local"
-    - "echo 'bantime  = 10m' >> /target/etc/fail2ban/jail.local"
-    - "echo 'findtime  = 10m' >> /target/etc/fail2ban/jail.local"
-    - "echo 'maxretry = 5' >> /target/etc/fail2ban/jail.local"
-    - "echo '[sshd]' >> /target/etc/fail2ban/jail.local"
-    - "echo 'enabled = true' >> /target/etc/fail2ban/jail.local"
-    - "echo 'port = ssh' >> /target/etc/fail2ban/jail.local"
-    - "echo 'filter = sshd' >> /target/etc/fail2ban/jail.local"
-    - "echo 'logpath = /var/log/auth.log' >> /target/etc/fail2ban/jail.local"
-    - "echo 'maxretry = 3' >> /target/etc/fail2ban/jail.local"
-    - "echo '[sshd-ddos]' >> /target/etc/fail2ban/jail.local"
-    - "echo 'enabled = true' >> /target/etc/fail2ban/jail.local"
-    - "echo 'port = ssh' >> /target/etc/fail2ban/jail.local"
-    - "echo 'filter = sshd-ddos' >> /target/etc/fail2ban/jail.local"
-    - "echo 'logpath = /var/log/auth.log' >> /target/etc/fail2ban/jail.local"
-    - "echo 'maxretry = 2' >> /target/etc/fail2ban/jail.local"
-    - "echo '[recidive]' >> /target/etc/fail2ban/jail.local"
-    - "echo 'enabled = true' >> /target/etc/fail2ban/jail.local"
-    - "echo 'logpath  = /var/log/fail2ban.log' >> /target/etc/fail2ban/jail.local"
-    - "echo 'bantime  = 1d' >> /target/etc/fail2ban/jail.local"
-    - "echo 'findtime  = 1d' >> /target/etc/fail2ban/jail.local"
-    - "echo 'maxretry = 5' >> /target/etc/fail2ban/jail.local"
-    - "echo 'action = iptables-multiport[name=recidive, port=\"ssh,smtp,imap2,imap3,pop3,pop3s\", protocol=tcp]' >> /target/etc/fail2ban/jail.local"
-    - "chroot /target systemctl restart fail2ban"
-
-    # Unattended-upgrades configuration
-    - "echo 'Unattended-Upgrade::Allowed-Origins {\n\t\"${distro_id}:${distro_codename}-security\";\n};' > /target/etc/apt/apt.conf.d/50unattended-upgrades"
-    - "echo 'APT::Periodic::Update-Package-Lists \"1\";' > /target/etc/apt/apt.conf.d/20auto-upgrades"
-    - "echo 'APT::Periodic::Unattended-Upgrade \"1\";' >> /target/etc/apt/apt.conf.d/20auto-upgrades"
-    - "echo 'APT::Periodic::AutocleanInterval \"7\";' >> /target/etc/apt/apt.conf.d/20auto-upgrades"
-    - "echo 'APT::Periodic::Download-Upgradeable-Packages \"1\";' >> /target/etc/apt/apt.conf.d/20auto-upgrades"
-
-    # VPN configurations
-    - "wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /target/etc/openvpn/nordvpn.zip"
-    - "wget -q https://mullvad.net/download/openvpn-config/ -O /target/etc/openvpn/mullvad.zip"
-    - "wget -q https://protonvpn.com/download/protonvpn.zip -O /target/etc/openvpn/protonvpn.zip"
-    - "unzip /target/etc/openvpn/nordvpn.zip -d /target/etc/openvpn/nordvpn"
-    - "unzip /target/etc/openvpn/mullvad.zip -d /target/etc/openvpn/mullvad"
-    - "unzip /target/etc/openvpn/protonvpn.zip -d /target/etc/openvpn/protonvpn"
+    # Changing from networkd to NetworkManager
+    # move existing config out of the way
+    - find /target/etc/netplan/ -name "*.yaml" -exec sh -c 'mv "$1" "$1-orig"' _ {} \;
+    # Create a new netplan and enable it
     - |
-      for vpn_file in /target/etc/openvpn/nordvpn/*.ovpn; do
-        chroot /target nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0' vpn.secrets 'password=nordvpn_password' vpn.file "${vpn_file}";
-      done
-    - |
-      for vpn_file in /target/etc/openvpn/mullvad/*.ovpn; do
-        chroot /target nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0' vpn.secrets 'password=mullvad_password' vpn.file "${vpn_file}";
-      done
-    - |
-      for vpn_file in /target/etc/openvpn/protonvpn/*.ovpn; do
-        chroot /target nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0' vpn.secrets 'password=protonvpn_password' vpn.file "${vpn_file}";
-      done
-    - "echo '#!/bin/bash' > /target/etc/network/if-pre-up.d/random-vpn"
-    - "echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /target/etc/network/if-pre-up.d/random-vpn"
-    - "echo 'RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}' >> /target/etc/network/if-pre-up.d/random-vpn"
-    - "echo 'nmcli con up \"${RANDOM_VPN_FILE}\"' >> /target/etc/network/if-pre-up.d/random-vpn"
-    - "chmod +x /target/etc/network/if-pre-up.d/random-vpn"
-
-    # Additional sysctl configurations
-    - "echo 'net.ipv4.conf.all.rp_filter=1' >> /target/etc/sysctl.conf"
-    - "echo 'net.ipv4.conf.default.rp_filter=1' >> /target/etc/sysctl.conf"
-    - "echo 'net.ipv4.tcp_syncookies=1' >> /target/etc/sysctl.conf"
-    - "echo 'net.ipv4.conf.all.accept_redirects=0' >> /target/etc/sysctl.conf"
-    - "echo 'net.ipv6.conf.all.accept_redirects=0' >> /target/etc/sysctl.conf"
-    - "echo 'net.ipv4.conf.all.secure_redirects=0' >> /target/etc/sysctl.conf"
-    - "echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' >> /target/etc/sysctl.conf"
-    - "echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' >> /target/etc/sysctl.conf"
-    - "echo 'kernel.randomize_va_space=2' >> /target/etc/sysctl.conf"
-    - "aa-enforce /target/etc/apparmor.d/*"
-    - "sed -i '/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/' /target/etc/fstab"
-    - "echo 'vm.swappiness=10' >> /target/etc/sysctl.conf"
-    - "echo 'vm.dirty_ratio=20' >> /target/etc/sysctl.conf"
-    - "echo 'vm.dirty_background_ratio=5' >> /target/etc/sysctl.conf"
-
-    # Install new kernel at the end
-    - "chroot /target apt-get install -y linux-generic-hwe-24.04"
-
-  # Additional user-data configuration
-  user-data:
-    disable_root: false
-    ssh:
-      install-server: true
-    users:
-      - default
+      cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
+      network:
+        version: 2
+        renderer: NetworkManager
+      EOF
+    - curtin in-target --target /target netplan generate
+    - curtin in-target --target /target netplan apply
+    - curtin in-target --target /target systemctl enable NetworkManager.service
+    - curtin in-target --target=/target apt-get install -y fail2ban secure-delete wipe ufw openvpn apparmor-profiles
+    - wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target apt-key add -
+    - echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /target/etc/apt/sources.list.d/signal-xenial.list
+    - curtin in-target --target=/target apt-get update
+    - curtin in-target --target=/target apt-get install -y signal-desktop
+    - add-apt-repository -y ppa:unit193/encryption
+    - apt-get update
+    - apt-get install -y veracrypt
+    # Download and install Notesnook
+    - wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb
+    - curtin in-target --target=/target dpkg -i /tmp/notesnook.deb
+    - curtin in-target --target=/target apt-get -f install -y
+    # Download post_install.sh from GitHub, make it executable and run it
+    - wget -O /target/root/post_install.sh https://raw.githubusercontent.com/yourusername/yourrepository/main/post_install.sh
+    - curtin in-target --target=/target chmod +x /root/post_install.sh
+    - curtin in-target --target=/target /root/post_install.sh
+  user-data: # Commands here run during first boot (cannot be interactive)
+    runcmd:
+      # Install the NVIDIA driver from the ppa we setup earlier
+      - [apt-get, update]
+      - [apt-get, dist-upgrade, --yes]
+      - [apt, autoremove, --yes]
+      - [apt-get, install, --yes,  nvidia-driver-570] #, --no-install-recommends]
+      - [sudo, -u, ubuntu, dbus-launch, gsettings, set, org.gnome.desktop.background, picture-uri, file:///usr/share/backgrounds/Puget_Systems.png]
+      # - |
+      #   #!/usr/bin/env bash
+      #   echo ''
+      #   echo '***************************************'
+      #   echo ' To complete install setup please run, '
+      #   echo ' sudo /etc/finish-install-setup.sh'
+      #   echo '***************************************'
+      #   echo ''
 
