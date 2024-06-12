@@ -32,12 +32,11 @@ autoinstall:
           suite: multiverse
   early-commands:
     - "echo 'Adding necessary repositories'"
-    - "apt-add-repository -y ppa:unit193/encryption"
-    - "apt-add-repository -y ppa:ubuntu-desktop/ppa"
-    - "apt-get update"
+    - "chroot /target apt-add-repository -y ppa:unit193/encryption"
+    - "chroot /target apt-add-repository -y ppa:ubuntu-desktop/ppa"
+    - "chroot /target apt-get update"
   packages:
     - snapd
-    - fail2ban
     - apparmor
     - apparmor-profiles
     - apparmor-utils
@@ -60,22 +59,22 @@ autoinstall:
     - name: gufw
   late-commands:
     - "chroot /target apt-get update"
-    - "chroot /target apt-get install -y ubuntu-desktop"
-    - "chroot /target apt-get update"
+    - "chroot /target apt-get install -y ubuntu-desktop || echo 'ubuntu-desktop not found' >> /target/root/install_errors.log || true"
+    - "chroot /target apt-get install -y fail2ban || echo 'fail2ban not found' >> /target/root/install_errors.log || true"
     - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf"
     - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf"
     - "echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf"
-    - "gufw default deny incoming"
-    - "gufw default allow outgoing"
-    - "gufw allow from any to any port 1194 proto udp"
-    - "gufw allow 22/tcp"
-    - "gufw enable"
-    - "fallocate -l 4G /swapfile"
-    - "chmod 600 /swapfile"
-    - "echo YES | cryptsetup luksFormat /swapfile"
-    - "cryptsetup open /swapfile cryptswap"
-    - "mkswap /dev/mapper/cryptswap"
-    - "swapon /dev/mapper/cryptswap"
+    - "chroot /target gufw default deny incoming || true"
+    - "chroot /target gufw default allow outgoing || true"
+    - "chroot /target gufw allow from any to any port 1194 proto udp || true"
+    - "chroot /target gufw allow 22/tcp || true"
+    - "chroot /target gufw enable || true"
+    - "chroot /target fallocate -l 4G /swapfile"
+    - "chroot /target chmod 600 /swapfile"
+    - "echo YES | chroot /target cryptsetup luksFormat /swapfile"
+    - "chroot /target cryptsetup open /swapfile cryptswap"
+    - "chroot /target mkswap /dev/mapper/cryptswap"
+    - "chroot /target swapon /dev/mapper/cryptswap"
     - "echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab"
     - "echo '[DEFAULT]' > /etc/fail2ban/jail.local"
     - "echo 'bantime  = 10m' >> /etc/fail2ban/jail.local"
@@ -100,7 +99,7 @@ autoinstall:
     - "echo 'findtime  = 1d' >> /etc/fail2ban/jail.local"
     - "echo 'maxretry = 5' >> /etc/fail2ban/jail.local"
     - "echo 'action = iptables-multiport[name=recidive, port=\"ssh,smtp,imap2,imap3,pop3,pop3s\", protocol=tcp]' >> /etc/fail2ban/jail.local"
-    - "systemctl restart fail2ban"
+    - "chroot /target systemctl restart fail2ban || true"
     - "echo 'Unattended-Upgrade::Allowed-Origins {\n\t\"${distro_id}:${distro_codename}-security\";\n};' > /etc/apt/apt.conf.d/50unattended-upgrades"
     - "echo 'APT::Periodic::Update-Package-Lists \"1\";' > /etc/apt/apt.conf.d/20auto-upgrades"
     - "echo 'APT::Periodic::Unattended-Upgrade \"1\";' >> /etc/apt/apt.conf.d/20auto-upgrades"
@@ -115,15 +114,15 @@ autoinstall:
     - |
       for vpn_file in /etc/openvpn/nordvpn/*.ovpn; do
         nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0' vpn.secrets 'password=nordvpn_password' vpn.file "${vpn_file}";
-      done
+      done || true
     - |
       for vpn_file in /etc/openvpn/mullvad/*.ovpn; do
         nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0' vpn.secrets 'password=mullvad_password' vpn.file "${vpn_file}";
-      done
+      done || true
     - |
       for vpn_file in /etc/openvpn/protonvpn/*.ovpn; do
         nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0' vpn.secrets 'password=protonvpn_password' vpn.file "${vpn_file}";
-      done
+      done || true
     - "echo '#!/bin/bash' > /etc/network/if-pre-up.d/random-vpn"
     - "echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /etc/network/if-pre-up.d/random-vpn"
     - "echo 'RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}' >> /etc/network/if-pre-up.d/random-vpn"
@@ -146,6 +145,6 @@ autoinstall:
     - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | apt-key add -"
     - "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /etc/apt/sources.list.d/signal-xenial.list"
     - "chroot /target apt-get update"
-    - "chroot /target apt-get upgrade -y"
+    - "chroot /target apt-get upgrade -y || true"
     - "shutdown -h now"
 
