@@ -1,84 +1,141 @@
 #cloud-config
 autoinstall:
   version: 1
+
+  # Identity and user creation
   identity:
     hostname: secure-host
     username: secure-user
     password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
+
+  # Interactive selection for drive and partitioning
   interactive-sections:
     - storage
+
+  # Locale and timezone configuration
   locale: en_GB.UTF-8
   timezone: Europe/London
+
+  # Network configuration
   network:
     version: 2
     ethernets:
       enp6s0:
         dhcp4: true
-  apt:
-    preserve_sources_list: false
-    primary:
-      - arches: [default]
-        uri: http://archive.ubuntu.com/ubuntu/
-    security:
-      - arches: [default]
-        uri: http://security.ubuntu.com/ubuntu/
-    extra:
-      - arches: [default]
-        uri: http://archive.ubuntu.com/ubuntu/
-        suite: universe
-      - arches: [default]
-        uri: http://archive.ubuntu.com/ubuntu/
-        suite: multiverse
+
+  # Package repositories
+  sources:
+    ubuntu:
+      source: "http://archive.ubuntu.com/ubuntu"
+      suites: 
+        - main
+        - universe
+        - multiverse
+        - restricted
+    ubuntu-updates:
+      source: "http://archive.ubuntu.com/ubuntu"
+      suites: 
+        - focal-updates/main
+        - focal-updates/universe
+        - focal-updates/multiverse
+        - focal-updates/restricted
+    ubuntu-security:
+      source: "http://security.ubuntu.com/ubuntu"
+      suites: 
+        - focal-security/main
+        - focal-security/universe
+        - focal-security/multiverse
+        - focal-security/restricted
+    ubuntu-desktop:
+      source: "http://ppa.launchpad.net/ubuntu-desktop/ppa/ubuntu"
+      suites: 
+        - focal
+    gnome3-team:
+      source: "http://ppa.launchpad.net/gnome3-team/gnome3/ubuntu"
+      suites: 
+        - focal
+    graphics-drivers:
+      source: "http://ppa.launchpad.net/graphics-drivers/ppa/ubuntu"
+      suites: 
+        - focal
+
+  # Packages to install
   packages:
-    - snapd
+    - fail2ban
+    - apparmor
+    - apparmor-profiles
+    - apparmor-utils
     - vim
-    - curl
+    - secure-delete
+    - wipe
+    - gnupg
+    - openvpn
+    - ufw
+
+  # Snaps to install
   snaps:
+    - name: firefox
+    - name: gnome-3-38-2004
+    - name: gtk-common-themes
+    - name: snap-store
+    - name: snapd-desktop-integration
     - name: notesnook
     - name: torbrowser-launcher
     - name: veracrypt
-    - name: keepassxc
+    - name: gnome-tweaks
     - name: signal-desktop
+    - name: keepassxc
     - name: brave
-    - name: gufw
+
+  # Boot commands
+  bootcmd:
+    - apt-get update
+    - apt-get upgrade -y
+
+  # Late commands
   late-commands:
-    - "echo 'nameserver 8.8.8.8' > /target/etc/resolv.conf"
-    - "echo 'nameserver 8.8.4.4' >> /target/etc/resolv.conf"
-    - "echo 'Checking network connectivity' > /target/var/log/late-commands.log"
-    - "ping -c 4 google.com >> /target/var/log/late-commands.log 2>&1 || echo 'Ping failed' >> /target/var/log/late-commands.log"
-    - "curtin in-target --target=/target -- ping -c 4 google.com >> /target/var/log/late-commands.log 2>&1 || echo 'Ping failed inside chroot' >> /target/var/log/late-commands.log"
-    - "echo 'Checking DNS configuration' >> /target/var/log/late-commands.log"
-    - "cat /target/etc/resolv.conf >> /target/var/log/late-commands.log"
-    - "curtin in-target --target=/target -- cat /etc/resolv.conf >> /target/var/log/late-commands.log"
-    - "echo 'Adding necessary repositories' >> /target/var/log/late-commands.log"
-    - "curtin in-target --target=/target -- add-apt-repository -y ppa:ubuntu-desktop/ppa >> /target/var/log/late-commands.log 2>&1 || echo 'Failed to add ppa:ubuntu-desktop/ppa' >> /target/var/log/late-commands.log"
-    - "curtin in-target --target=/target -- apt-get update >> /target/var/log/late-commands.log 2>&1 || echo 'Failed to apt-get update' >> /target/var/log/late-commands.log"
-    - "curtin in-target --target=/target -- apt-get install -y linux-generic-hwe-24.04 >> /target/var/log/late-commands.log 2>&1 || echo 'HWE kernel not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y ubuntu-desktop >> /target/var/log/late-commands.log 2>&1 || echo 'ubuntu-desktop not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y apparmor apparmor-profiles apparmor-utils >> /target/var/log/late-commands.log 2>&1 || echo 'apparmor packages not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y fail2ban >> /target/var/log/late-commands.log 2>&1 || echo 'fail2ban not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y gufw >> /target/var/log/late-commands.log 2>&1 || echo 'gufw not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y unattended-upgrades >> /target/var/log/late-commands.log 2>&1 || echo 'unattended-upgrades not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y gnome-tweaks >> /target/var/log/late-commands.log 2>&1 || echo 'gnome-tweaks not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y openvpn >> /target/var/log/late-commands.log 2>&1 || echo 'openvpn not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y secure-delete >> /target/var/log/late-commands.log 2>&1 || echo 'secure-delete not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y wipe >> /target/var/log/late-commands.log 2>&1 || echo 'wipe not found' >> /target/root/install_errors.log || true"
-    - "curtin in-target --target=/target -- apt-get install -y gnupg >> /target/var/log/late-commands.log 2>&1 || echo 'gnupg not found' >> /target/root/install_errors.log || true"
+    - "chroot /target add-apt-repository -y ppa:unit193/encryption"
+    - "chroot /target apt-get update"
+    - "chroot /target apt-get install -y ubuntu-desktop kleopatra firejail unattended-upgrades cryptsetup curl"
+
+    # Enable the boot splash
+    - "curtin in-target -- sed -i /etc/default/grub -e 's/GRUB_CMDLINE_LINUX_DEFAULT=\".*/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"/'"
+    - "curtin in-target -- update-grub"
+
+    # Let NetworkManager handle network
+    - "rm /target/etc/netplan/00-installer-config*yaml"
+    - "printf 'network:\n  version: 2\n  renderer: NetworkManager\n' > /target/etc/netplan/01-network-manager-all.yaml"
+
+    # Remove default filesystem and related tools not used with the suggested 'direct' storage layout.
+    - "curtin in-target -- apt-get remove -y btrfs-progs lvm2 xfsprogs"
+
+    # Remove other packages present by default in Ubuntu Server but not normally present in Ubuntu Desktop.
+    - "curtin in-target -- apt-get remove -y ubuntu-server ubuntu-server-minimal binutils byobu dmeventd finalrd gawk kpartx mdadm ncurses-term needrestart open-iscsi openssh-server sg3-utils ssh-import-id sssd thin-provisioning-tools vim tmux sosreport screen open-vm-tools motd-news-config lxd-agent-loader landscape-common htop git fonts-ubuntu-console ethtool"
+
+    # Keep cloud-init, as it performs some of the installation on first boot.
+    - "curtin in-target -- apt-get install -y cloud-init"
+
+    # Finally, remove things only installed as dependencies of other things we have already removed.
+    - "curtin in-target -- apt-get autoremove -y"
+
+    # Install signal repository
+    - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | chroot /target apt-key add -"
+    - "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /target/etc/apt/sources.list.d/signal-xenial.list"
+    - "chroot /target apt-get update"
+
+    # Disable IPv6
     - "echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
     - "echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
     - "echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /target/etc/sysctl.conf"
-    - "curtin in-target --target=/target -- gufw default deny incoming >> /target/var/log/late-commands.log 2>&1 || true"
-    - "curtin in-target --target=/target -- gufw default allow outgoing >> /target/var/log/late-commands.log 2>&1 || true"
-    - "curtin in-target --target=/target -- gufw allow from any to any port 1194 proto udp >> /target/var/log/late-commands.log 2>&1 || true"
-    - "curtin in-target --target=/target -- gufw allow 22/tcp >> /target/var/log/late-commands.log 2>&1 || true"
-    - "curtin in-target --target=/target -- gufw enable >> /target/var/log/late-commands.log 2>&1 || true"
-    - "curtin in-target --target=/target -- fallocate -l 4G /swapfile"
-    - "curtin in-target --target=/target -- chmod 600 /swapfile"
-    - "echo YES | curtin in-target --target=/target -- cryptsetup luksFormat /swapfile"
-    - "curtin in-target --target=/target -- cryptsetup open /swapfile cryptswap"
-    - "curtin in-target --target=/target -- mkswap /dev/mapper/cryptswap"
-    - "curtin in-target --target=/target -- swapon /dev/mapper/cryptswap"
-    - "echo '/dev/mapper/cryptswap none swap sw 0 0' >> /target/etc/fstab"
+
+    # UFW firewall rules
+    - "chroot /target ufw default deny incoming"
+    - "chroot /target ufw default allow outgoing"
+    - "chroot /target ufw allow 1194/udp"
+    - "chroot /target ufw allow 22/tcp"
+    - "chroot /target ufw enable"
+
+    # Fail2Ban configuration
     - "echo '[DEFAULT]' > /target/etc/fail2ban/jail.local"
     - "echo 'bantime  = 10m' >> /target/etc/fail2ban/jail.local"
     - "echo 'findtime  = 10m' >> /target/etc/fail2ban/jail.local"
@@ -102,35 +159,41 @@ autoinstall:
     - "echo 'findtime  = 1d' >> /target/etc/fail2ban/jail.local"
     - "echo 'maxretry = 5' >> /target/etc/fail2ban/jail.local"
     - "echo 'action = iptables-multiport[name=recidive, port=\"ssh,smtp,imap2,imap3,pop3,pop3s\", protocol=tcp]' >> /target/etc/fail2ban/jail.local"
-    - "curtin in-target --target=/target -- systemctl restart fail2ban || true"
+    - "chroot /target systemctl restart fail2ban"
+
+    # Unattended-upgrades configuration
     - "echo 'Unattended-Upgrade::Allowed-Origins {\n\t\"${distro_id}:${distro_codename}-security\";\n};' > /target/etc/apt/apt.conf.d/50unattended-upgrades"
     - "echo 'APT::Periodic::Update-Package-Lists \"1\";' > /target/etc/apt/apt.conf.d/20auto-upgrades"
     - "echo 'APT::Periodic::Unattended-Upgrade \"1\";' >> /target/etc/apt/apt.conf.d/20auto-upgrades"
     - "echo 'APT::Periodic::AutocleanInterval \"7\";' >> /target/etc/apt/apt.conf.d/20auto-upgrades"
     - "echo 'APT::Periodic::Download-Upgradeable-Packages \"1\";' >> /target/etc/apt/apt.conf.d/20auto-upgrades"
-    - "curtin in-target --target=/target -- wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /etc/openvpn/nordvpn.zip"
-    - "curtin in-target --target=/target -- wget -q https://mullvad.net/download/openvpn-config/ -O /etc/openvpn/mullvad.zip"
-    - "curtin in-target --target=/target -- wget -q https://protonvpn.com/download/protonvpn.zip -O /etc/openvpn/protonvpn.zip"
-    - "curtin in-target --target=/target -- unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn"
-    - "curtin in-target --target=/target -- unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad"
-    - "curtin in-target --target=/target -- unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn"
+
+    # VPN configurations
+    - "wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /target/etc/openvpn/nordvpn.zip"
+    - "wget -q https://mullvad.net/download/openvpn-config/ -O /target/etc/openvpn/mullvad.zip"
+    - "wget -q https://protonvpn.com/download/protonvpn.zip -O /target/etc/openvpn/protonvpn.zip"
+    - "unzip /target/etc/openvpn/nordvpn.zip -d /target/etc/openvpn/nordvpn"
+    - "unzip /target/etc/openvpn/mullvad.zip -d /target/etc/openvpn/mullvad"
+    - "unzip /target/etc/openvpn/protonvpn.zip -d /target/etc/openvpn/protonvpn"
     - |
       for vpn_file in /target/etc/openvpn/nordvpn/*.ovpn; do
-        curtin in-target --target=/target -- nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0' vpn.secrets 'password=nordvpn_password' vpn.file "${vpn_file}";
-      done || true
+        chroot /target nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0' vpn.secrets 'password=nordvpn_password' vpn.file "${vpn_file}";
+      done
     - |
       for vpn_file in /target/etc/openvpn/mullvad/*.ovpn; do
-        curtin in-target --target=/target -- nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0' vpn.secrets 'password=mullvad_password' vpn.file "${vpn_file}";
-      done || true
+        chroot /target nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0' vpn.secrets 'password=mullvad_password' vpn.file "${vpn_file}";
+      done
     - |
       for vpn_file in /target/etc/openvpn/protonvpn/*.ovpn; do
-        curtin in-target --target=/target -- nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0' vpn.secrets 'password=protonvpn_password' vpn.file "${vpn_file}";
-      done || true
+        chroot /target nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name '' vpn.data 'connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0' vpn.secrets 'password=protonvpn_password' vpn.file "${vpn_file}";
+      done
     - "echo '#!/bin/bash' > /target/etc/network/if-pre-up.d/random-vpn"
     - "echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /target/etc/network/if-pre-up.d/random-vpn"
     - "echo 'RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}' >> /target/etc/network/if-pre-up.d/random-vpn"
     - "echo 'nmcli con up \"${RANDOM_VPN_FILE}\"' >> /target/etc/network/if-pre-up.d/random-vpn"
     - "chmod +x /target/etc/network/if-pre-up.d/random-vpn"
+
+    # Additional sysctl configurations
     - "echo 'net.ipv4.conf.all.rp_filter=1' >> /target/etc/sysctl.conf"
     - "echo 'net.ipv4.conf.default.rp_filter=1' >> /target/etc/sysctl.conf"
     - "echo 'net.ipv4.tcp_syncookies=1' >> /target/etc/sysctl.conf"
@@ -140,14 +203,20 @@ autoinstall:
     - "echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' >> /target/etc/sysctl.conf"
     - "echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' >> /target/etc/sysctl.conf"
     - "echo 'kernel.randomize_va_space=2' >> /target/etc/sysctl.conf"
-    - "curtin in-target --target=/target -- aa-enforce /etc/apparmor.d/* || true"
+    - "aa-enforce /target/etc/apparmor.d/*"
     - "sed -i '/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/' /target/etc/fstab"
     - "echo 'vm.swappiness=10' >> /target/etc/sysctl.conf"
     - "echo 'vm.dirty_ratio=20' >> /target/etc/sysctl.conf"
     - "echo 'vm.dirty_background_ratio=5' >> /target/etc/sysctl.conf"
-    - "curtin in-target --target=/target -- wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- apt-key add -"
-    - "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /target/etc/apt/sources.list.d/signal-xenial.list"
-    - "curtin in-target --target=/target -- apt-get update"
-    - "curtin in-target --target=/target -- apt-get upgrade -y || true"
-    - "curtin in-target --target=/target -- shutdown -h now"
+
+    # Install new kernel at the end
+    - "chroot /target apt-get install -y linux-generic-hwe-24.04"
+
+  # Additional user-data configuration
+  user-data:
+    disable_root: false
+    ssh:
+      install-server: true
+    users:
+      - default
 
