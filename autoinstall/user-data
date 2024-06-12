@@ -43,7 +43,6 @@ autoinstall:
     - name: gufw
   late-commands:
     - "echo 'Adding necessary repositories'"
-    - "curtin in-target --target=/target -- add-apt-repository -y ppa:ubuntu-desktop/ppa"
     - "curtin in-target --target=/target -- apt-get update"
     - "curtin in-target --target=/target -- apt-get install -y linux-generic-hwe-24.04 || echo 'HWE kernel not found' >> /target/root/install_errors.log || true"
     - "curtin in-target --target=/target -- apt-get install -y ubuntu-desktop || echo 'ubuntu-desktop not found' >> /target/root/install_errors.log || true"
