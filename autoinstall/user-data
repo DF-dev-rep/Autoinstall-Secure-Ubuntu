@@ -50,8 +50,8 @@ autoinstall:
     - openvpn
   snaps: []
   late-commands:
-    - wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target apt-key add -
-    - echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /target/etc/apt/sources.list.d/signal-xenial.list
+    - curl -s https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target apt-key add -
+    - echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | curtin in-target --target=/target tee -a /etc/apt/sources.list.d/signal-xenial.list
     - curtin in-target --target=/target apt-get update
     - curtin in-target --target=/target apt-get install -y signal-desktop
     - wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb
@@ -67,6 +67,6 @@ autoinstall:
       - apt-get, update
       - apt-get, dist-upgrade, --yes
       - apt, autoremove, --yes
-      - apt-get, install, --yes,  nvidia-driver-570 --no-install-recommends]
-      - [22222222222222222222222222222222222222222222222222222222222222222222222222222222222sudo, -u, ubuntu, dbus-launch, gsettings, set, org.gnome.desktop.background, picture-uri, file:///usr/share/backgrounds/Puget_Systems.png]
+      - apt-get, install, --yes,  nvidia-driver-570 --no-install-recommends
+      - sudo, -u, ubuntu, dbus-launch, gsettings, set, org.gnome.desktop.background, picture-uri, https://wallpapercave.com/download/dark-wolf-wallpaper-pasbTkJ
 
