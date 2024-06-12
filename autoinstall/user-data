@@ -22,10 +22,6 @@ autoinstall:
     sources:
       graphics-drivers-ppa:  # This is here to get the yaml formatting right when adding a ppa
         source: ppa:graphics-drivers/ppa
-      unit193-encryption:
-        source: ppa:unit193/encryption
-      ubuntu-desktop-ppa:
-        source: ppa:ubuntu-desktop/ppa
   packages:
     - build-essential
     - network-manager
@@ -50,9 +46,6 @@ autoinstall:
   snaps: []
   package_update: true
   package_upgrade: true
-  early-commands:
-    - curtin in-target --target=/target -- apt-get update
-    - curtin in-target --target=/target -- apt-get upgrade -y
   late-commands:
     # Changing from networkd to NetworkManager
     # move existing config out of the way
@@ -75,10 +68,6 @@ autoinstall:
     - echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /target/etc/apt/sources.list.d/signal-xenial.list
     - curtin in-target --target=/target apt-get update
     - curtin in-target --target=/target apt-get install -y signal-desktop
-    - add-apt-repository -y ppa:unit193/encryption
-    - apt-get update
-    - apt-get install -y veracrypt
-    # Download and install Notesnook
     - wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb
     - curtin in-target --target=/target dpkg -i /tmp/notesnook.deb
     - curtin in-target --target=/target apt-get -f install -y
