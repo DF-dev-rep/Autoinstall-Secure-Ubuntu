@@ -48,9 +48,6 @@ autoinstall:
   snaps: []
   package_update: true
   package_upgrade: true
-  early-commands:
-    - curtin in-target --target=/target -- apt-get update
-    - curtin in-target --target=/target -- apt-get upgrade -y
   late-commands:
     # Changing from networkd to NetworkManager
     # move existing config out of the way
