@@ -46,11 +46,11 @@ autoinstall:
     - fail2ban
     - secure-delete
     - wipe
-    - ufw
+    - gufw
     - openvpn
   snaps: []
   late-commands:
-    - curl -s https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target apt-key add -
+    - curl -s https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor -o /target/etc/apt/trusted.gpg.d/signal-desktop.gpg
     - echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | curtin in-target --target=/target tee -a /etc/apt/sources.list.d/signal-xenial.list
     - curtin in-target --target=/target apt-get update
     - curtin in-target --target=/target apt-get install -y signal-desktop
@@ -63,10 +63,110 @@ autoinstall:
     - curtin in-target --target=/target /root/post_install.sh
   user-data: # Commands here run during first boot (cannot be interactive)
     runcmd:
-      # Install the NVIDIA driver from the ppa we setup earlier
-      - apt-get, update
-      - apt-get, dist-upgrade, --yes
-      - apt, autoremove, --yes
-      - apt-get, install, --yes,  nvidia-driver-570 --no-install-recommends
-      - sudo, -u, ubuntu, dbus-launch, gsettings, set, org.gnome.desktop.background, picture-uri, https://wallpapercave.com/download/dark-wolf-wallpaper-pasbTkJ
+      - apt-get update
+      - apt-get dist-upgrade --yes
+      - apt-get install -y openvpn network-manager-openvpn-gnome curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli
+      - mkdir -p /etc/openvpn/{nordvpn,mullvad,protonvpn}
+      - curl -o /etc/openvpn/nordvpn.zip https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip
+      - curl -o /etc/openvpn/mullvad.zip https://mullvad.net/download/openvpn-config/
+      - curl -o /etc/openvpn/protonvpn.zip https://protonvpn.com/download/protonvpn.zip
+      - unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn
+      - unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad
+      - unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn
+      - |
+        configure_vpn() {
+          local vpn_provider=$1
+          local vpn_username=$2
+          local vpn_password=$3
+          for vpn_file in /etc/openvpn/${vpn_provider}/*.ovpn; do
+            nmcli con add type vpn ifname -- vpn-type openvpn con-name "${vpn_provider}-$(basename ${vpn_file})" \
+              -- connection.interface-name '' vpn.data "connection-type=password,service-type=openvpn,username=${vpn_username},password-flags=0" \
+              vpn.secrets "password=${vpn_password}" vpn.file "${vpn_file}"
+          done
+        }
+        configure_vpn "nordvpn" "nordvpn_username" "nordvpn_password"
+        configure_vpn "mullvad" "mullvad_username" "mullvad_password"
+        configure_vpn "protonvpn" "protonvpn_username" "protonvpn_password"
+      - |
+        cat << 'EOF' > /etc/network/if-pre-up.d/random-vpn
+        #!/bin/bash
+        VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)
+        RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}
+        nmcli con up "${RANDOM_VPN_FILE}"
+        EOF
+        chmod +x /etc/network/if-pre-up.d/random-vpn
+      - echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf
+      - echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf
+      - echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.all.rp_filter=1' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.default.rp_filter=1' >> /etc/sysctl.conf
+      - echo 'net.ipv4.tcp_syncookies=1' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.all.accept_redirects=0' >> /etc/sysctl.conf
+      - echo 'net.ipv6.conf.all.accept_redirects=0' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.all.secure_redirects=0' >> /etc/sysctl.conf
+      - echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' >> /etc/sysctl.conf
+      - echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' >> /etc/sysctl.conf
+      - echo 'kernel.randomize_va_space=2' >> /etc/sysctl.conf
+      - sysctl -p
+      - |
+        cat << EOF > /etc/fail2ban/jail.local
+        [DEFAULT]
+        bantime  = 10m
+        findtime  = 10m
+        maxretry = 5
+        [sshd]
+        enabled = true
+        port = ssh
+        filter = sshd
+        logpath = /var/log/auth.log
+        maxretry = 3
+        [sshd-ddos]
+        enabled = true
+        port = ssh
+        filter = sshd-ddos
+        logpath = /var/log/auth.log
+        maxretry = 2
+        [recidive]
+        enabled = true
+        logpath  = /var/log/fail2ban.log
+        bantime  = 1d
+        findtime  = 1d
+        maxretry = 5
+        action = iptables-multiport[name=recidive, port="ssh,smtp,imap2,imap3,pop3,pop3s", protocol=tcp]
+        EOF
+      - systemctl enable fail2ban
+      - systemctl restart fail2ban
+      - rkhunter --update
+      - rkhunter --propupd
+      - rkhunter --check --skip-keypress
+      - gufw default deny incoming
+      - gufw default allow outgoing
+      - gufw allow from any to any port 1194 proto udp
+      - gufw allow 22/tcp
+      - gufw enable
+      - fallocate -l 4G /swapfile
+      - chmod 600 /swapfile
+      - echo YES | cryptsetup luksFormat /swapfile
+      - cryptsetup open /swapfile cryptswap
+      - mkswap /dev/mapper/cryptswap
+      - swapon /dev/mapper/cryptswap
+      - echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab
+      - echo 'kernel.kptr_restrict=2' >> /etc/sysctl.conf
+      - echo 'kernel.perf_event_paranoid=3' >> /etc/sysctl.conf
+      - echo 'kernel.yama.ptrace_scope=1' >> /etc/sysctl.conf
+      - echo 'net.core.bpf_jit_harden=2' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.all.accept_source_route=0' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.default.accept_source_route=0' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.all.log_martians=1' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.default.log_martians=1' >> /etc/sysctl.conf
+      - sysctl -p
+      - freshclam
+      - systemctl enable clamav-daemon
+      - systemctl start clamav-daemon
+      - gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+      - gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+      - systemctl disable bluetooth
+      - systemctl stop bluetooth
+      - sysctl -p
+      - reboot
 
