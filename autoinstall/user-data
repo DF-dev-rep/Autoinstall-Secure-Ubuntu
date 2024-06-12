@@ -48,19 +48,18 @@ autoinstall:
     - wipe
     - gufw
     - openvpn
+    - rkhunter
+    - clamav
+    - clamav-daemon
   snaps: []
   late-commands:
-    - curl -s https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor -o /target/etc/apt/trusted.gpg.d/signal-desktop.gpg
-    - echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | curtin in-target --target=/target tee -a /etc/apt/sources.list.d/signal-xenial.list
+    - curl -s https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target gpg --dearmor -o /etc/apt/trusted.gpg.d/signal-desktop.gpg
+    - curtin in-target --target=/target -- sh -c "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' > /etc/apt/sources.list.d/signal-xenial.list"
     - curtin in-target --target=/target apt-get update
     - curtin in-target --target=/target apt-get install -y signal-desktop
     - wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb
     - curtin in-target --target=/target dpkg -i /tmp/notesnook.deb
     - curtin in-target --target=/target apt-get -f install -y
-    # Download post_install.sh from GitHub, make it executable and run it
-    - wget -O /target/root/post_install.sh https://raw.githubusercontent.com/yourusername/yourrepository/main/post_install.sh
-    - curtin in-target --target=/target chmod +x /root/post_install.sh
-    - curtin in-target --target=/target /root/post_install.sh
   user-data: # Commands here run during first boot (cannot be interactive)
     runcmd:
       - apt-get update
