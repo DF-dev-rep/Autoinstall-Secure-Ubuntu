@@ -23,22 +23,41 @@ autoinstall:
       enp6s0:
         dhcp4: true
 
-  # Repositories and packages
-  mirror:
-    apt:
-      primary:
-        - arches: [default]
-          uri: http://archive.ubuntu.com/ubuntu/
-      security:
-        - arches: [default]
-          uri: http://security.ubuntu.com/ubuntu/
-      extra:
-        - arches: [default]
-          uri: http://archive.ubuntu.com/ubuntu/
-          suite: universe
-        - arches: [default]
-          uri: http://archive.ubuntu.com/ubuntu/
-          suite: multiverse
+  # Package repositories
+  sources:
+    ubuntu:
+      source: "http://archive.ubuntu.com/ubuntu"
+      suites: 
+        - main
+        - universe
+        - multiverse
+        - restricted
+    ubuntu-updates:
+      source: "http://archive.ubuntu.com/ubuntu"
+      suites: 
+        - focal-updates/main
+        - focal-updates/universe
+        - focal-updates/multiverse
+        - focal-updates/restricted
+    ubuntu-security:
+      source: "http://security.ubuntu.com/ubuntu"
+      suites: 
+        - focal-security/main
+        - focal-security/universe
+        - focal-security/multiverse
+        - focal-security/restricted
+    ubuntu-desktop:
+      source: "http://ppa.launchpad.net/ubuntu-desktop/ppa/ubuntu"
+      suites: 
+        - focal
+    gnome3-team:
+      source: "http://ppa.launchpad.net/gnome3-team/gnome3/ubuntu"
+      suites: 
+        - focal
+    graphics-drivers:
+      source: "http://ppa.launchpad.net/graphics-drivers/ppa/ubuntu"
+      suites: 
+        - focal
 
   # Packages to install
   packages:
@@ -71,7 +90,6 @@ autoinstall:
   late-commands:
     - "chroot /target apt-get update"
     - "chroot /target add-apt-repository -y ppa:unit193/encryption"
-    - "chroot /target add-apt-repository -y ppa:ubuntu-desktop/ppa"
     - "chroot /target apt-get update"
     - "chroot /target apt-get install -y ubuntu-desktop gufw kleopatra firejail unattended-upgrades cryptsetup curl"
 
@@ -96,7 +114,7 @@ autoinstall:
     - "curtin in-target -- apt-get autoremove -y"
 
     # Install signal repository
-    - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | apt-key add -"
+    - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | chroot /target apt-key add -"
     - "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /target/etc/apt/sources.list.d/signal-xenial.list"
     - "chroot /target apt-get update"
 
