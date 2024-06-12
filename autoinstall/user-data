@@ -17,10 +17,7 @@ autoinstall:
     username: secure-user
     password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
   network:
-    version: 2
-    ethernets:
-      enp6s0:
-        dhcp4: true
+    config: disabled  # Disables the default network configuration
   apt:
     sources:
       graphics-drivers-ppa:  # This is here to get the yaml formatting right when adding a ppa
@@ -45,9 +42,17 @@ autoinstall:
     - gnome-tweaks
     - torbrowser-launcher
     - keepassxc
+    - fail2ban
+    - secure-delete
+    - wipe
+    - ufw
+    - openvpn
   snaps: []
   package_update: true
   package_upgrade: true
+  early-commands:
+    - curtin in-target --target=/target -- apt-get update
+    - curtin in-target --target=/target -- apt-get upgrade -y
   late-commands:
     # Changing from networkd to NetworkManager
     # move existing config out of the way
@@ -57,12 +62,15 @@ autoinstall:
       cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
       network:
         version: 2
+        ethernets:
+          eth0:
+            dhcp4: true
         renderer: NetworkManager
       EOF
     - curtin in-target --target /target netplan generate
     - curtin in-target --target /target netplan apply
     - curtin in-target --target /target systemctl enable NetworkManager.service
-    - curtin in-target --target=/target apt-get install -y fail2ban secure-delete wipe ufw openvpn apparmor-profiles
+    - curtin in-target --target=/target apt-get install -y apparmor-profiles
     - wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target apt-key add -
     - echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' | tee -a /target/etc/apt/sources.list.d/signal-xenial.list
     - curtin in-target --target=/target apt-get update
