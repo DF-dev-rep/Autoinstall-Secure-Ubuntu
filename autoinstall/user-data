@@ -42,7 +42,9 @@ autoinstall:
     - name: brave
     - name: gufw
   late-commands:
-    - "echo 'Adding necessary repositories'"
+    - "echo 'Waiting for network to be available'"
+    - "while ! ping -c 1 google.com; do sleep 1; done"
+    - "echo 'Network is up, adding necessary repositories'"
     - "add-apt-repository -y ppa:unit193/encryption"
     - "add-apt-repository -y ppa:ubuntu-desktop/ppa"
     - "apt-get update"
