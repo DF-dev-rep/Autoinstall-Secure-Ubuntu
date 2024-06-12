@@ -33,6 +33,7 @@ autoinstall:
     - snapd
     - vim
     - curl
+    - network-manager
   snaps:
     - name: notesnook
     - name: torbrowser-launcher
@@ -42,7 +43,9 @@ autoinstall:
     - name: brave
     - name: gufw
   late-commands:
-    - "echo 'Waiting for network to be available'"
+    - "echo 'Ensuring network is available'"
+    - "netplan apply"
+    - "systemctl restart NetworkManager"
     - "while ! ping -c 1 google.com; do sleep 1; done"
     - "echo 'Network is up, adding necessary repositories'"
     - "add-apt-repository -y ppa:unit193/encryption"
