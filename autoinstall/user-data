@@ -5,6 +5,14 @@ autoinstall:
     update: yes
   interactive-sections:
     - storage
+  identity:
+    hostname: secure-host
+    username: secure-user
+    password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
+  locale: en_GB.UTF-8
+  timezone: Europe/London
+  keyboard:
+    layout: us
   storage:
     layout:
       name: direct
@@ -19,14 +27,6 @@ autoinstall:
         match:
           name: "eth*"
         dhcp4: true
-  locale: en_GB.UTF-8
-  timezone: Europe/London
-  keyboard:
-    layout: us
-  identity:
-    hostname: secure-host
-    username: secure-user
-    password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
   packages:
     - build-essential
     - network-manager
@@ -50,7 +50,38 @@ autoinstall:
     - rkhunter
     - clamav
     - clamav-daemon
+    - kleopatra
   snaps: []
+  late-commands:
+    # Changing from networkd to NetworkManager
+    # move existing config out of the way
+    - find /target/etc/netplan/ -name "*.yaml" -exec sh -c 'mv "$1" "$1-orig"' _ {} \;
+    # Create a new netplan and enable it
+    - |
+      cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
+      network:
+        version: 2
+        ethernets:
+          id0:
+            match:
+              name: "en*"
+            dhcp4: true
+          id1:
+            match:
+              name: "eth*"
+            dhcp4: true
+        renderer: NetworkManager
+      EOF
+    - curtin in-target --target /target netplan generate
+    - curtin in-target --target /target netplan apply
+    - curtin in-target --target /target systemctl enable NetworkManager.service
+    - 'wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb || echo "Failed to download Obsidian" >> /target/var/log/late-command-errors.log'
+    - 'curtin in-target --target=/target -- sh -c "dpkg -i /tmp/obsidian.deb || apt-get -f install -y" || echo "Failed to install Obsidian" >> /target/var/log/late-command-errors.log'
+    - 'wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb || echo "Failed to download Notesnook" >> /target/var/log/late-command-errors.log'
+    - 'curtin in-target --target=/target -- sh -c "dpkg -i /tmp/notesnook.deb || apt-get -f install -y" || echo "Failed to install Notesnook" >> /target/var/log/late-command-errors.log'
+    - 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- sh -c "apt-key add -" || echo "Failed to add Signal key" >> /target/var/log/late-command-errors.log'
+    - 'sh -c "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' > /target/etc/apt/sources.list.d/signal-xenial.list || echo "Failed to add Signal repo" >> /target/var/log/late-command-errors.log'
+    - 'curtin in-target --target=/target -- sh -c "apt-get update && apt-get install -y signal-desktop" || echo "Failed to install Signal" >> /target/var/log/late-command-errors.log'
   user-data:
     runcmd:
       - apt-get update
@@ -134,5 +165,6 @@ autoinstall:
       - systemctl disable bluetooth
       - systemctl stop bluetooth
       - sysctl -p
+      - gsettings set org.gnome.shell favorite-apps "['org.gnome.Nautilus.desktop', 'firefox.desktop', 'org.gnome.Terminal.desktop', 'keepassxc_keepassxc.desktop', 'torbrowser-launcher.desktop', 'org.gnome.tweaks.desktop', 'org.gnome.Software.desktop', 'kleopatra.desktop']"
       - reboot
 
