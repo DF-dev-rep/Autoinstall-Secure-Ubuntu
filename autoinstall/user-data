@@ -52,13 +52,13 @@ autoinstall:
     - clamav-daemon
   snaps: []
   late-commands:
-    - 'wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb || echo "Failed to download Obsidian" >> /target/var/log/late-command-errors.log'
-    - 'curtin in-target --target=/target -- sh -c "dpkg -i /tmp/obsidian.deb || apt-get -f install -y" || echo "Failed to install Obsidian" >> /target/var/log/late-command-errors.log'
-    - 'wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb || echo "Failed to download Notesnook" >> /target/var/log/late-command-errors.log'
-    - 'curtin in-target --target=/target -- sh -c "dpkg -i /tmp/notesnook.deb || apt-get -f install -y" || echo "Failed to install Notesnook" >> /target/var/log/late-command-errors.log'
-    - 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- sh -c "apt-key add -" || echo "Failed to add Signal key" >> /target/var/log/late-command-errors.log'
-    - 'sh -c "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' > /target/etc/apt/sources.list.d/signal-xenial.list || echo "Failed to add Signal repo" >> /target/var/log/late-command-errors.log'
-    - 'curtin in-target --target=/target -- sh -c "apt-get update && apt-get install -y signal-desktop" || echo "Failed to install Signal" >> /target/var/log/late-command-errors.log'
+    - wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb
+    - curtin in-target --target=/target -- sh -c "dpkg -i /tmp/obsidian.deb || apt-get -f install -y"
+    - wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb
+    - curtin in-target --target=/target -- sh -c "dpkg -i /tmp/notesnook.deb || apt-get -f install -y"
+    - wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- sh -c "apt-key add -"
+    - sh -c "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' > /target/etc/apt/sources.list.d/signal-xenial.list"
+    - curtin in-target --target=/target -- sh -c "apt-get update && apt-get install -y signal-desktop"
   user-data:
     runcmd:
       - apt-get update
