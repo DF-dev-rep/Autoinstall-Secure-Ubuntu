@@ -47,11 +47,14 @@ autoinstall:
     - secure-delete
     - wipe
     - gufw
-    - openvpn
     - rkhunter
     - clamav
     - clamav-daemon
   snaps: []
+  late-commands:
+    - wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb
+    - curtin in-target --target=/target dpkg -i /tmp/obsidian.deb
+    - curtin in-target --target=/target apt-get -f install -y
   user-data:
     runcmd:
       - apt-get update
@@ -66,49 +69,7 @@ autoinstall:
       - add-apt-repository -y ppa:videolan/master-daily || true
       - add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true
       - apt-get update
-      - apt-get install -y openvpn network-manager-openvpn-gnome curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli
-      - mkdir -p /etc/openvpn/{nordvpn,mullvad,protonvpn}
-      - curl -o /etc/openvpn/nordvpn.zip https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip
-      - curl -o /etc/openvpn/mullvad.zip https://mullvad.net/download/openvpn-config/
-      - curl -o /etc/openvpn/protonvpn.zip https://protonvpn.com/download/protonvpn.zip
-      - unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn
-      - unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad
-      - unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn
-      - |
-        configure_vpn() {
-          local vpn_provider=$1
-          local vpn_username=$2
-          local vpn_password=$3
-          for vpn_file in /etc/openvpn/${vpn_provider}/*.ovpn; do
-            nmcli con add type vpn ifname -- vpn-type openvpn con-name "${vpn_provider}-$(basename ${vpn_file})" \
-              -- connection.interface-name '' vpn.data "connection-type=password,service-type=openvpn,username=${vpn_username},password-flags=0" \
-              vpn.secrets "password=${vpn_password}" vpn.file "${vpn_file}"
-          done
-        }
-        configure_vpn "nordvpn" "nordvpn_username" "nordvpn_password"
-        configure_vpn "mullvad" "mullvad_username" "mullvad_password"
-        configure_vpn "protonvpn" "protonvpn_username" "protonvpn_password"
-      - |
-        cat << 'EOF' > /etc/network/if-pre-up.d/random-vpn
-        #!/bin/bash
-        VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)
-        RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}
-        nmcli con up "${RANDOM_VPN_FILE}"
-        EOF
-        chmod +x /etc/network/if-pre-up.d/random-vpn
-      - echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf
-      - echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf
-      - echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.all.rp_filter=1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.default.rp_filter=1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.tcp_syncookies=1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.all.accept_redirects=0' >> /etc/sysctl.conf
-      - echo 'net.ipv6.conf.all.accept_redirects=0' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.all.secure_redirects=0' >> /etc/sysctl.conf
-      - echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' >> /etc/sysctl.conf
-      - echo 'kernel.randomize_va_space=2' >> /etc/sysctl.conf
-      - sysctl -p
+      - apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli
       - |
         cat << EOF > /etc/fail2ban/jail.local
         [DEFAULT]
