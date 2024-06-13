@@ -15,7 +15,72 @@ autoinstall:
     layout: us
   storage:
     layout:
-      name: direct
+      name: custom
+    config:
+      - id: disk0
+        type: disk
+        match:
+          size: largest
+        ptable: gpt
+        wipe: superblock-recursive
+        preserve: false
+        name: ''
+        grub_device: true
+        serial: ''
+      - id: part0
+        type: partition
+        device: disk0
+        size: 512M
+        flag: boot
+      - id: part1
+        type: partition
+        device: disk0
+        size: -1
+      - id: volgroup0
+        type: lvm_volgroup
+        devices:
+          - part1
+        name: vg0
+      - id: lvroot
+        type: lvm_partition
+        volgroup: volgroup0
+        size: 50%
+        name: lvroot
+      - id: lvhome
+        type: lvm_partition
+        volgroup: volgroup0
+        size: 50%
+        name: lvhome
+      - id: format-boot
+        type: format
+        fstype: fat32
+        volume: part0
+        preserve: false
+      - id: format-root
+        type: format
+        fstype: ext4
+        volume: lvroot
+        preserve: false
+      - id: format-home
+        type: format
+        fstype: ext4
+        volume: lvhome
+        preserve: false
+      - id: mount-boot
+        type: mount
+        path: /boot
+        device: part0
+        format: format-boot
+      - id: mount-root
+        type: mount
+        path: /
+        device: lvroot
+        format: format-root
+      - id: mount-home
+        type: mount
+        path: /home
+        device: lvhome
+        format: format-home
   network:
     version: 2
     ethernets:
@@ -53,10 +118,7 @@ autoinstall:
     - kleopatra
   snaps: []
   late-commands:
-    # Changing from networkd to NetworkManager
-    # move existing config out of the way
     - "find /target/etc/netplan/ -name '*.yaml' -exec sh -c 'mv \"$1\" \"$1-orig\"' _ {} \\; || true"
-    # Create a new netplan and enable it
     - |
       cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
       network:
@@ -77,17 +139,8 @@ autoinstall:
     - "curtin in-target --target /target systemctl enable NetworkManager.service || true"
     - "wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb || echo 'Failed to download Obsidian' >> /target/var/log/late-command-errors.log || true"
     - "curtin in-target --target=/target -- sh -c 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' || echo 'Failed to install Obsidian' >> /target/var/log/late-command-errors.log || true"
-    - "wget -O /target/tmp/notesnook.AppImage https://notesnook.com/releases/linux/notesnook_linux_x86_64.AppImage || echo 'Failed to download Notesnook' >> /target/var/log/late-command-errors.log || true"
-    - "chmod +x /target/tmp/notesnook.AppImage || echo 'Failed to make Notesnook executable' >> /target/var/log/late-command-errors.log || true"
-    - "mv /target/tmp/notesnook.AppImage /target/usr/local/bin/notesnook || echo 'Failed to move Notesnook' >> /target/var/log/late-command-errors.log || true"
-    - "curtin in-target --target=/target -- sh -c 'apt-get update && apt-get install -y gnupg || true'"
-    - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- gpg --dearmor -o /usr/share/keyrings/signal-desktop-keyring.gpg || true"
-    - "sh -c 'echo \"deb [signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main\" > /target/etc/apt/sources.list.d/signal-xenial.list' || echo 'Failed to add Signal repo' >> /target/var/log/late-command-errors.log || true"
-    - "curtin in-target --target=/target -- sh -c 'apt-get update && apt-get install -y signal-desktop' || echo 'Failed to install Signal' >> /target/var/log/late-command-errors.log || true"
   user-data:
     runcmd:
-      - apt-get update
-      - apt-get dist-upgrade --yes
       - apt-get install -y software-properties-common
       - add-apt-repository -y ppa:graphics-drivers/ppa || true
       - add-apt-repository -y ppa:libreoffice/ppa || true
@@ -97,7 +150,6 @@ autoinstall:
       - add-apt-repository -y ppa:chris-lea/node.js || true
       - add-apt-repository -y ppa:videolan/master-daily || true
       - add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true
-      - apt-get update
       - apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli
       - |
         cat << EOF > /etc/fail2ban/jail.local
@@ -150,23 +202,25 @@ autoinstall:
       - mkswap /dev/mapper/cryptswap || true
       - swapon /dev/mapper/cryptswap || true
       - echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab || true
-      - echo 'kernel.kptr_restrict=2' >> /etc/sysctl.conf || true
-      - echo 'kernel.perf_event_paranoid=3' >> /etc/sysctl.conf || true
-      - echo 'kernel.yama.ptrace_scope=1' >> /etc/sysctl.conf || true
-      - echo 'net.core.bpf_jit_harden=2' >> /etc/sysctl.conf || true
-      - echo 'net.ipv4.conf.all.accept_source_route=0' >> /etc/sysctl.conf || true
-      - echo 'net.ipv4.conf.default.accept_source_route=0' >> /etc/sysctl.conf || true
-      - echo 'net.ipv4.conf.all.log_martians=1' >> /etc/sysctl.conf || true
-      - echo 'net.ipv4.conf.default.log_martians=1' >> /etc/sysctl.conf || true
-      - sysctl -p || true
       - freshclam || true
       - systemctl enable clamav-daemon || true
-      - systemctl start clamav-daemon || true
+      - apt-get update || true
+      - apt-get dist-upgrade --yes || true
       - gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' || true
       - gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || true
-      - systemctl disable bluetooth || true
-      - systemctl stop bluetooth || true
       - sysctl -p || true
       - gsettings set org.gnome.shell favorite-apps "['org.gnome.Nautilus.desktop', 'firefox.desktop', 'org.gnome.Terminal.desktop', 'keepassxc_keepassxc.desktop', 'torbrowser-launcher.desktop', 'org.gnome.tweaks.desktop', 'org.gnome.Software.desktop', 'kleopatra.desktop']" || true
+      - |
+        cat << EOF > /etc/sysctl.d/99-custom.conf
+        kernel.kptr_restrict=2
+        kernel.perf_event_paranoid=3
+        kernel.yama.ptrace_scope=1
+        net.core.bpf_jit_harden=2
+        net.ipv4.conf.all.accept_source_route=0
+        net.ipv4.conf.default.accept_source_route=0
+        net.ipv4.conf.all.log_martians=1
+        net.ipv4.conf.default.log_martians=1
+        EOF
+      - sysctl --system || true
       - reboot || true
 
