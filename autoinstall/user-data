@@ -17,40 +17,28 @@ autoinstall:
     layout:
       name: custom
     config:
-      - id: disk0
-        type: disk
-        match:
-          size: largest
-        ptable: gpt
-        wipe: superblock-recursive
-        preserve: false
-        name: ''
-        grub_device: true
-        serial: ''
       - id: part0
         type: partition
-        device: disk0
         size: 512M
         flag: boot
       - id: part1
         type: partition
-        device: disk0
         size: -1
-      - id: volgroup0
+      - id: vg0
         type: lvm_volgroup
         devices:
           - part1
         name: vg0
       - id: lvroot
         type: lvm_partition
-        volgroup: volgroup0
+        volgroup: vg0
         size: 50%
-        name: lvroot
+        name: root
       - id: lvhome
         type: lvm_partition
-        volgroup: volgroup0
+        volgroup: vg0
         size: 50%
-        name: lvhome
+        name: home
       - id: format-boot
         type: format
         fstype: fat32
@@ -118,109 +106,5 @@ autoinstall:
     - kleopatra
   snaps: []
   late-commands:
-    - "find /target/etc/netplan/ -name '*.yaml' -exec sh -c 'mv \"$1\" \"$1-orig\"' _ {} \\; || true"
-    - |
-      cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
-      network:
-        version: 2
-        ethernets:
-          id0:
-            match:
-              name: "en*"
-            dhcp4: true
-          id1:
-            match:
-              name: "eth*"
-            dhcp4: true
-        renderer: NetworkManager
-      EOF
-    - "curtin in-target --target /target netplan generate || true"
-    - "curtin in-target --target /target netplan apply || true"
-    - "curtin in-target --target /target systemctl enable NetworkManager.service || true"
-    - "wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb || echo 'Failed to download Obsidian' >> /target/var/log/late-command-errors.log || true"
-    - "curtin in-target --target=/target -- sh -c 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' || echo 'Failed to install Obsidian' >> /target/var/log/late-command-errors.log || true"
-  user-data:
-    runcmd:
-      - apt-get install -y software-properties-common
-      - add-apt-repository -y ppa:graphics-drivers/ppa || true
-      - add-apt-repository -y ppa:libreoffice/ppa || true
-      - add-apt-repository -y ppa:mozillateam/ppa || true
-      - add-apt-repository -y ppa:chromium-team/stable || true
-      - add-apt-repository -y ppa:git-core/ppa || true
-      - add-apt-repository -y ppa:chris-lea/node.js || true
-      - add-apt-repository -y ppa:videolan/master-daily || true
-      - add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true
-      - apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli
-      - |
-        cat << EOF > /etc/fail2ban/jail.local
-        [DEFAULT]
-        bantime = 1h
-        findtime = 10m
-        maxretry = 5
-        backend = auto
-        destemail = root@localhost
-        sendername = Fail2Ban
-        mta = sendmail
-        action = %(action_mwl)s
-
-        [sshd]
-        enabled = true
-        port = ssh
-        filter = sshd
-        logpath = /var/log/auth.log
-        maxretry = 3
-
-        [sshd-ddos]
-        enabled = true
-        port = ssh
-        filter = sshd-ddos
-        logpath = /var/log/auth.log
-        maxretry = 2
-
-        [recidive]
-        enabled = true
-        logpath = /var/log/fail2ban.log
-        bantime = 1d
-        findtime = 1d
-        maxretry = 5
-        action = iptables-multiport[name=recidive, port="ssh,smtp,imap2,imap3,pop3,pop3s", protocol=tcp]
-        EOF
-      - systemctl enable fail2ban || true
-      - systemctl restart fail2ban || true
-      - rkhunter --update || true
-      - rkhunter --propupd || true
-      - rkhunter --check --skip-keypress || true
-      - gufw default deny incoming || true
-      - gufw default allow outgoing || true
-      - gufw allow from any to any port 1194 proto udp || true
-      - gufw allow 22/tcp || true
-      - gufw enable || true
-      - fallocate -l 4G /swapfile || true
-      - chmod 600 /swapfile || true
-      - echo YES | cryptsetup luksFormat /swapfile || true
-      - cryptsetup open /swapfile cryptswap || true
-      - mkswap /dev/mapper/cryptswap || true
-      - swapon /dev/mapper/cryptswap || true
-      - echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab || true
-      - freshclam || true
-      - systemctl enable clamav-daemon || true
-      - apt-get update || true
-      - apt-get dist-upgrade --yes || true
-      - gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' || true
-      - gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || true
-      - sysctl -p || true
-      - gsettings set org.gnome.shell favorite-apps "['org.gnome.Nautilus.desktop', 'firefox.desktop', 'org.gnome.Terminal.desktop', 'keepassxc_keepassxc.desktop', 'torbrowser-launcher.desktop', 'org.gnome.tweaks.desktop', 'org.gnome.Software.desktop', 'kleopatra.desktop']" || true
-      - |
-        cat << EOF > /etc/sysctl.d/99-custom.conf
-        kernel.kptr_restrict=2
-        kernel.perf_event_paranoid=3
-        kernel.yama.ptrace_scope=1
-        net.core.bpf_jit_harden=2
-        net.ipv4.conf.all.accept_source_route=0
-        net.ipv4.conf.default.accept_source_route=0
-        net.ipv4.conf.all.log_martians=1
-        net.ipv4.conf.default.log_martians=1
-        EOF
-      - sysctl --system || true
-      - reboot || true
+    - "shutdown now"
 
