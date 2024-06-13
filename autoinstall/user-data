@@ -55,7 +55,7 @@ autoinstall:
   late-commands:
     # Changing from networkd to NetworkManager
     # move existing config out of the way
-    - "find /target/etc/netplan/ -name '*.yaml' -exec sh -c 'mv \"$1\" \"$1-orig\"' _ {} \\;"
+    - "find /target/etc/netplan/ -name '*.yaml' -exec sh -c 'mv \"$1\" \"$1-orig\"' _ {} \\; || true"
     # Create a new netplan and enable it
     - |
       cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
@@ -72,16 +72,18 @@ autoinstall:
             dhcp4: true
         renderer: NetworkManager
       EOF
-    - curtin in-target --target /target netplan generate
-    - curtin in-target --target /target netplan apply
-    - curtin in-target --target /target systemctl enable NetworkManager.service
-    - "wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb || echo 'Failed to download Obsidian' >> /target/var/log/late-command-errors.log"
-    - "curtin in-target --target=/target -- sh -c 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' || echo 'Failed to install Obsidian' >> /target/var/log/late-command-errors.log"
-    - "wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb || echo 'Failed to download Notesnook' >> /target/var/log/late-command-errors.log"
-    - "curtin in-target --target=/target -- sh -c 'dpkg -i /tmp/notesnook.deb || apt-get -f install -y' || echo 'Failed to install Notesnook' >> /target/var/log/late-command-errors.log"
-    - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- sh -c 'apt-key add -' || echo 'Failed to add Signal key' >> /target/var/log/late-command-errors.log"
-    - "sh -c 'echo \"deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main\" > /target/etc/apt/sources.list.d/signal-xenial.list' || echo 'Failed to add Signal repo' >> /target/var/log/late-command-errors.log"
-    - "curtin in-target --target=/target -- sh -c 'apt-get update && apt-get install -y signal-desktop' || echo 'Failed to install Signal' >> /target/var/log/late-command-errors.log"
+    - "curtin in-target --target /target netplan generate || true"
+    - "curtin in-target --target /target netplan apply || true"
+    - "curtin in-target --target /target systemctl enable NetworkManager.service || true"
+    - "wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb || echo 'Failed to download Obsidian' >> /target/var/log/late-command-errors.log || true"
+    - "curtin in-target --target=/target -- sh -c 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' || echo 'Failed to install Obsidian' >> /target/var/log/late-command-errors.log || true"
+    - "wget -O /target/tmp/notesnook.AppImage https://notesnook.com/releases/linux/notesnook_linux_x86_64.AppImage || echo 'Failed to download Notesnook' >> /target/var/log/late-command-errors.log || true"
+    - "chmod +x /target/tmp/notesnook.AppImage || echo 'Failed to make Notesnook executable' >> /target/var/log/late-command-errors.log || true"
+    - "mv /target/tmp/notesnook.AppImage /target/usr/local/bin/notesnook || echo 'Failed to move Notesnook' >> /target/var/log/late-command-errors.log || true"
+    - "curtin in-target --target=/target -- sh -c 'apt-get update && apt-get install -y gnupg || true'"
+    - "wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- gpg --dearmor -o /usr/share/keyrings/signal-desktop-keyring.gpg || true"
+    - "sh -c 'echo \"deb [signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main\" > /target/etc/apt/sources.list.d/signal-xenial.list' || echo 'Failed to add Signal repo' >> /target/var/log/late-command-errors.log || true"
+    - "curtin in-target --target=/target -- sh -c 'apt-get update && apt-get install -y signal-desktop' || echo 'Failed to install Signal' >> /target/var/log/late-command-errors.log || true"
   user-data:
     runcmd:
       - apt-get update
@@ -131,40 +133,40 @@ autoinstall:
         maxretry = 5
         action = iptables-multiport[name=recidive, port="ssh,smtp,imap2,imap3,pop3,pop3s", protocol=tcp]
         EOF
-      - systemctl enable fail2ban
-      - systemctl restart fail2ban
-      - rkhunter --update
-      - rkhunter --propupd
-      - rkhunter --check --skip-keypress
-      - gufw default deny incoming
-      - gufw default allow outgoing
-      - gufw allow from any to any port 1194 proto udp
-      - gufw allow 22/tcp
-      - gufw enable
-      - fallocate -l 4G /swapfile
-      - chmod 600 /swapfile
-      - echo YES | cryptsetup luksFormat /swapfile
-      - cryptsetup open /swapfile cryptswap
-      - mkswap /dev/mapper/cryptswap
-      - swapon /dev/mapper/cryptswap
-      - echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab
-      - echo 'kernel.kptr_restrict=2' >> /etc/sysctl.conf
-      - echo 'kernel.perf_event_paranoid=3' >> /etc/sysctl.conf
-      - echo 'kernel.yama.ptrace_scope=1' >> /etc/sysctl.conf
-      - echo 'net.core.bpf_jit_harden=2' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.all.accept_source_route=0' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.default.accept_source_route=0' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.all.log_martians=1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.default.log_martians=1' >> /etc/sysctl.conf
-      - sysctl -p
-      - freshclam
-      - systemctl enable clamav-daemon
-      - systemctl start clamav-daemon
-      - gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
-      - gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-      - systemctl disable bluetooth
-      - systemctl stop bluetooth
-      - sysctl -p
-      - gsettings set org.gnome.shell favorite-apps "['org.gnome.Nautilus.desktop', 'firefox.desktop', 'org.gnome.Terminal.desktop', 'keepassxc_keepassxc.desktop', 'torbrowser-launcher.desktop', 'org.gnome.tweaks.desktop', 'org.gnome.Software.desktop', 'kleopatra.desktop']"
-      - reboot
+      - systemctl enable fail2ban || true
+      - systemctl restart fail2ban || true
+      - rkhunter --update || true
+      - rkhunter --propupd || true
+      - rkhunter --check --skip-keypress || true
+      - gufw default deny incoming || true
+      - gufw default allow outgoing || true
+      - gufw allow from any to any port 1194 proto udp || true
+      - gufw allow 22/tcp || true
+      - gufw enable || true
+      - fallocate -l 4G /swapfile || true
+      - chmod 600 /swapfile || true
+      - echo YES | cryptsetup luksFormat /swapfile || true
+      - cryptsetup open /swapfile cryptswap || true
+      - mkswap /dev/mapper/cryptswap || true
+      - swapon /dev/mapper/cryptswap || true
+      - echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab || true
+      - echo 'kernel.kptr_restrict=2' >> /etc/sysctl.conf || true
+      - echo 'kernel.perf_event_paranoid=3' >> /etc/sysctl.conf || true
+      - echo 'kernel.yama.ptrace_scope=1' >> /etc/sysctl.conf || true
+      - echo 'net.core.bpf_jit_harden=2' >> /etc/sysctl.conf || true
+      - echo 'net.ipv4.conf.all.accept_source_route=0' >> /etc/sysctl.conf || true
+      - echo 'net.ipv4.conf.default.accept_source_route=0' >> /etc/sysctl.conf || true
+      - echo 'net.ipv4.conf.all.log_martians=1' >> /etc/sysctl.conf || true
+      - echo 'net.ipv4.conf.default.log_martians=1' >> /etc/sysctl.conf || true
+      - sysctl -p || true
+      - freshclam || true
+      - systemctl enable clamav-daemon || true
+      - systemctl start clamav-daemon || true
+      - gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' || true
+      - gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || true
+      - systemctl disable bluetooth || true
+      - systemctl stop bluetooth || true
+      - sysctl -p || true
+      - gsettings set org.gnome.shell favorite-apps "['org.gnome.Nautilus.desktop', 'firefox.desktop', 'org.gnome.Terminal.desktop', 'keepassxc_keepassxc.desktop', 'torbrowser-launcher.desktop', 'org.gnome.tweaks.desktop', 'org.gnome.Software.desktop', 'kleopatra.desktop']" || true
+      - reboot || true
 
