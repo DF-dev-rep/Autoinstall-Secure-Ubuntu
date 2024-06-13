@@ -47,11 +47,41 @@ autoinstall:
     - secure-delete
     - wipe
     - gufw
-    - openvpn
     - rkhunter
     - clamav
     - clamav-daemon
+    - kleopatra
   snaps: []
+  late-commands:
+    # Changing from networkd to NetworkManager
+    # move existing config out of the way
+    - find /target/etc/netplan/ -name "*.yaml" -exec sh -c 'mv "$1" "$1-orig"' _ {} \;
+    # Create a new netplan and enable it
+    - |
+      cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
+      network:
+        version: 2
+        ethernets:
+          id0:
+            match:
+              name: "en*"
+            dhcp4: true
+          id1:
+            match:
+              name: "eth*"
+            dhcp4: true
+        renderer: NetworkManager
+      EOF
+    - curtin in-target --target /target netplan generate
+    - curtin in-target --target /target netplan apply
+    - curtin in-target --target /target systemctl enable NetworkManager.service
+    - 'wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb || echo "Failed to download Obsidian" >> /target/var/log/late-command-errors.log'
+    - 'curtin in-target --target=/target -- sh -c "dpkg -i /tmp/obsidian.deb || apt-get -f install -y" || echo "Failed to install Obsidian" >> /target/var/log/late-command-errors.log'
+    - 'wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb || echo "Failed to download Notesnook" >> /target/var/log/late-command-errors.log'
+    - 'curtin in-target --target=/target -- sh -c "dpkg -i /tmp/notesnook.deb || apt-get -f install -y" || echo "Failed to install Notesnook" >> /target/var/log/late-command-errors.log'
+    - 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- sh -c "apt-key add -" || echo "Failed to add Signal key" >> /target/var/log/late-command-errors.log'
+    - 'sh -c "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' > /target/etc/apt/sources.list.d/signal-xenial.list || echo "Failed to add Signal repo" >> /target/var/log/late-command-errors.log'
+    - 'curtin in-target --target=/target -- sh -c "apt-get update && apt-get install -y signal-desktop" || echo "Failed to install Signal" >> /target/var/log/late-command-errors.log'
   user-data:
     runcmd:
       - apt-get update
@@ -66,49 +96,7 @@ autoinstall:
       - add-apt-repository -y ppa:videolan/master-daily || true
       - add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true
       - apt-get update
-      - apt-get install -y openvpn network-manager-openvpn-gnome curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli
-      - mkdir -p /etc/openvpn/{nordvpn,mullvad,protonvpn}
-      - curl -o /etc/openvpn/nordvpn.zip https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip
-      - curl -o /etc/openvpn/mullvad.zip https://mullvad.net/download/openvpn-config/
-      - curl -o /etc/openvpn/protonvpn.zip https://protonvpn.com/download/protonvpn.zip
-      - unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn
-      - unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad
-      - unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn
-      - |
-        configure_vpn() {
-          local vpn_provider=$1
-          local vpn_username=$2
-          local vpn_password=$3
-          for vpn_file in /etc/openvpn/${vpn_provider}/*.ovpn; do
-            nmcli con add type vpn ifname -- vpn-type openvpn con-name "${vpn_provider}-$(basename ${vpn_file})" \
-              -- connection.interface-name '' vpn.data "connection-type=password,service-type=openvpn,username=${vpn_username},password-flags=0" \
-              vpn.secrets "password=${vpn_password}" vpn.file "${vpn_file}"
-          done
-        }
-        configure_vpn "nordvpn" "nordvpn_username" "nordvpn_password"
-        configure_vpn "mullvad" "mullvad_username" "mullvad_password"
-        configure_vpn "protonvpn" "protonvpn_username" "protonvpn_password"
-      - |
-        cat << 'EOF' > /etc/network/if-pre-up.d/random-vpn
-        #!/bin/bash
-        VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)
-        RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}
-        nmcli con up "${RANDOM_VPN_FILE}"
-        EOF
-        chmod +x /etc/network/if-pre-up.d/random-vpn
-      - echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf
-      - echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf
-      - echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.all.rp_filter=1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.default.rp_filter=1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.tcp_syncookies=1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.all.accept_redirects=0' >> /etc/sysctl.conf
-      - echo 'net.ipv6.conf.all.accept_redirects=0' >> /etc/sysctl.conf
-      - echo 'net.ipv4.conf.all.secure_redirects=0' >> /etc/sysctl.conf
-      - echo 'net.ipv4.icmp_echo_ignore_broadcasts=1' >> /etc/sysctl.conf
-      - echo 'net.ipv4.icmp_ignore_bogus_error_responses=1' >> /etc/sysctl.conf
-      - echo 'kernel.randomize_va_space=2' >> /etc/sysctl.conf
-      - sysctl -p
+      - apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli
       - |
         cat << EOF > /etc/fail2ban/jail.local
         [DEFAULT]
