@@ -1,11 +1,11 @@
 #cloud-config
 autoinstall:
   version: 1
-  refresh-installer:  # start with an up-to-date installer
-  update: yes
-  interactive-sections:  # Install groups listed here will wait for user input
+  refresh-installer:
+    update: yes
+  interactive-sections:
     - storage
-  storage:  # should set the interactive default but doesn't seem to work??
+  storage:
     layout:
       name: direct
   network:
@@ -52,14 +52,20 @@ autoinstall:
     - clamav
     - clamav-daemon
   snaps: []
-  late-commands:
-    - wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb
-    - curtin in-target --target=/target dpkg -i /tmp/notesnook.deb
-    - curtin in-target --target=/target apt-get -f install -y
-  user-data: # Commands here run during first boot (cannot be interactive)
+  user-data:
     runcmd:
       - apt-get update
       - apt-get dist-upgrade --yes
+      - apt-get install -y software-properties-common
+      - add-apt-repository -y ppa:graphics-drivers/ppa || true
+      - add-apt-repository -y ppa:libreoffice/ppa || true
+      - add-apt-repository -y ppa:mozillateam/ppa || true
+      - add-apt-repository -y ppa:chromium-team/stable || true
+      - add-apt-repository -y ppa:git-core/ppa || true
+      - add-apt-repository -y ppa:chris-lea/node.js || true
+      - add-apt-repository -y ppa:videolan/master-daily || true
+      - add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true
+      - apt-get update
       - apt-get install -y openvpn network-manager-openvpn-gnome curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli
       - mkdir -p /etc/openvpn/{nordvpn,mullvad,protonvpn}
       - curl -o /etc/openvpn/nordvpn.zip https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip
@@ -106,26 +112,34 @@ autoinstall:
       - |
         cat << EOF > /etc/fail2ban/jail.local
         [DEFAULT]
-        bantime  = 10m
-        findtime  = 10m
+        bantime = 1h
+        findtime = 10m
         maxretry = 5
+        backend = auto
+        destemail = root@localhost
+        sendername = Fail2Ban
+        mta = sendmail
+        action = %(action_mwl)s
+
         [sshd]
         enabled = true
         port = ssh
         filter = sshd
         logpath = /var/log/auth.log
         maxretry = 3
+
         [sshd-ddos]
         enabled = true
         port = ssh
         filter = sshd-ddos
         logpath = /var/log/auth.log
         maxretry = 2
+
         [recidive]
         enabled = true
-        logpath  = /var/log/fail2ban.log
-        bantime  = 1d
-        findtime  = 1d
+        logpath = /var/log/fail2ban.log
+        bantime = 1d
+        findtime = 1d
         maxretry = 5
         action = iptables-multiport[name=recidive, port="ssh,smtp,imap2,imap3,pop3,pop3s", protocol=tcp]
         EOF
@@ -163,11 +177,5 @@ autoinstall:
       - systemctl disable bluetooth
       - systemctl stop bluetooth
       - sysctl -p
-      - |
-        # Set up Signal repository and install signal-desktop
-        curl -s https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/signal-desktop.gpg || true
-        sh -c "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' > /etc/apt/sources.list.d/signal-xenial.list" || true
-        apt-get update || true
-        apt-get install -y signal-desktop || true
       - reboot
 
