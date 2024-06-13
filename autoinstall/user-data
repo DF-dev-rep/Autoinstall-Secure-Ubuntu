@@ -9,8 +9,6 @@ autoinstall:
     password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
   locale: en_GB.UTF-8
   timezone: Europe/London
-  keyboard:
-    layout: us
   interactive-sections:
     - storage
   storage:
@@ -53,3 +51,118 @@ autoinstall:
     - kleopatra
   snaps: []
   late-commands:
+    # Changing from networkd to NetworkManager
+    # move existing config out of the way
+    - find /target/etc/netplan/ -name "*.yaml" -exec sh -c 'mv "$1" "$1-orig"' _ {} \;
+    # Create a new netplan and enable it
+    - |
+      cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
+      network:
+        version: 2
+        ethernets:
+          id0:
+            match:
+              name: "en*"
+            dhcp4: true
+          id1:
+            match:
+              name: "eth*"
+            dhcp4: true
+        renderer: NetworkManager
+      EOF
+    - curtin in-target --target /target netplan generate
+    - curtin in-target --target /target netplan apply
+    - curtin in-target --target /target systemctl enable NetworkManager.service
+    - 'wget -O /target/tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb || echo "Failed to download Obsidian" >> /target/var/log/late-command-errors.log'
+    - 'curtin in-target --target=/target -- sh -c "dpkg -i /tmp/obsidian.deb || apt-get -f install -y" || echo "Failed to install Obsidian" >> /target/var/log/late-command-errors.log'
+    - 'wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb || echo "Failed to download Notesnook" >> /target/var/log/late-command-errors.log'
+    - 'curtin in-target --target=/target -- sh -c "dpkg -i /tmp/notesnook.deb || apt-get -f install -y" || echo "Failed to install Notesnook" >> /target/var/log/late-command-errors.log'
+    - 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- sh -c "apt-key add -" || echo "Failed to add Signal key" >> /target/var/log/late-command-errors.log'
+    - 'sh -c "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' > /target/etc/apt/sources.list.d/signal-xenial.list || echo "Failed to add Signal repo" >> /target/var/log/late-command-errors.log'
+    - 'curtin in-target --target=/target -- sh -c "apt-get update && apt-get install -y signal-desktop" || echo "Failed to install Signal" >> /target/var/log/late-command-errors.log'
+  user-data:
+    runcmd:
+      - apt-get update
+      - apt-get dist-upgrade --yes
+      - apt-get install -y software-properties-common
+      - add-apt-repository -y ppa:graphics-drivers/ppa || true
+      - add-apt-repository -y ppa:libreoffice/ppa || true
+      - add-apt-repository -y ppa:mozillateam/ppa || true
+      - add-apt-repository -y ppa:chromium-team/stable || true
+      - add-apt-repository -y ppa:git-core/ppa || true
+      - add-apt-repository -y ppa:chris-lea/node.js || true
+      - add-apt-repository -y ppa:videolan/master-daily || true
+      - add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true
+      - apt-get update
+      - apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli
+      - |
+        cat << EOF > /etc/fail2ban/jail.local
+        [DEFAULT]
+        bantime = 1h
+        findtime = 10m
+        maxretry = 5
+        backend = auto
+        destemail = root@localhost
+        sendername = Fail2Ban
+        mta = sendmail
+        action = %(action_mwl)s
+
+        [sshd]
+        enabled = true
+        port = ssh
+        filter = sshd
+        logpath = /var/log/auth.log
+        maxretry = 3
+
+        [sshd-ddos]
+        enabled = true
+        port = ssh
+        filter = sshd-ddos
+        logpath = /var/log/auth.log
+        maxretry = 2
+
+        [recidive]
+        enabled = true
+        logpath = /var/log/fail2ban.log
+        bantime = 1d
+        findtime = 1d
+        maxretry = 5
+        action = iptables-multiport[name=recidive, port="ssh,smtp,imap2,imap3,pop3,pop3s", protocol=tcp]
+        EOF
+      - systemctl enable fail2ban
+      - systemctl restart fail2ban
+      - rkhunter --update
+      - rkhunter --propupd
+      - rkhunter --check --skip-keypress
+      - gufw default deny incoming
+      - gufw default allow outgoing
+      - gufw allow from any to any port 1194 proto udp
+      - gufw allow 22/tcp
+      - gufw enable
+      - fallocate -l 4G /swapfile
+      - chmod 600 /swapfile
+      - echo YES | cryptsetup luksFormat /swapfile
+      - cryptsetup open /swapfile cryptswap
+      - mkswap /dev/mapper/cryptswap
+      - swapon /dev/mapper/cryptswap
+      - echo '/dev/mapper/cryptswap none swap sw 0 0' >> /etc/fstab
+      - echo 'kernel.kptr_restrict=2' >> /etc/sysctl.conf
+      - echo 'kernel.perf_event_paranoid=3' >> /etc/sysctl.conf
+      - echo 'kernel.yama.ptrace_scope=1' >> /etc/sysctl.conf
+      - echo 'net.core.bpf_jit_harden=2' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.all.accept_source_route=0' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.default.accept_source_route=0' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.all.log_martians=1' >> /etc/sysctl.conf
+      - echo 'net.ipv4.conf.default.log_martians=1' >> /etc/sysctl.conf
+      - sysctl -p
+      - freshclam
+      - systemctl enable clamav-daemon
+      - systemctl start clamav-daemon
+      - gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+      - gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+      - systemctl disable bluetooth
+      - systemctl stop bluetooth
+      - sysctl -p
+      - gsettings set org.gnome.shell favorite-apps "['org.gnome.Nautilus.desktop', 'firefox.desktop', 'org.gnome.Terminal.desktop', 'keepassxc_keepassxc.desktop', 'torbrowser-launcher.desktop', 'org.gnome.tweaks.desktop', 'org.gnome.Software.desktop', 'kleopatra.desktop']"
+      - reboot
+
