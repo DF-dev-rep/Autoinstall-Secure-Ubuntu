@@ -55,7 +55,7 @@ autoinstall:
   late-commands:
     # Changing from networkd to NetworkManager
     # move existing config out of the way
-    - find /target/etc/netplan/ -name "*.yaml" -exec sh -c 'mv "$1" "$1-orig"' _ {} \;
+    - 'find /target/etc/netplan/ -name "*.yaml" -exec sh -c ''mv "$1" "$1-orig"'' _ {} \;'
     # Create a new netplan and enable it
     - |
       cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
@@ -80,7 +80,7 @@ autoinstall:
     - 'wget -O /target/tmp/notesnook.deb https://download.notesnook.com/linux/notesnook-latest-amd64.deb || echo "Failed to download Notesnook" >> /target/var/log/late-command-errors.log'
     - 'curtin in-target --target=/target -- sh -c "dpkg -i /tmp/notesnook.deb || apt-get -f install -y" || echo "Failed to install Notesnook" >> /target/var/log/late-command-errors.log'
     - 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | curtin in-target --target=/target -- sh -c "apt-key add -" || echo "Failed to add Signal key" >> /target/var/log/late-command-errors.log'
-    - 'sh -c "echo 'deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main' > /target/etc/apt/sources.list.d/signal-xenial.list || echo "Failed to add Signal repo" >> /target/var/log/late-command-errors.log'
+    - 'sh -c "echo ''deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main'' > /target/etc/apt/sources.list.d/signal-xenial.list || echo "Failed to add Signal repo" >> /target/var/log/late-command-errors.log'
     - 'curtin in-target --target=/target -- sh -c "apt-get update && apt-get install -y signal-desktop" || echo "Failed to install Signal" >> /target/var/log/late-command-errors.log'
   user-data:
     runcmd:
