@@ -104,7 +104,6 @@ autoinstall:
     - clamav
     - clamav-daemon
     - kleopatra
-    - protonvpn
   snaps: []
   runcmd:
     - echo '#!/bin/bash' > /root/first-boot.sh
