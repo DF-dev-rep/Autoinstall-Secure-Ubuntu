@@ -106,15 +106,21 @@ autoinstall:
     - kleopatra
   snaps: []
   runcmd:
+    - sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash noresume\"/" /etc/default/grub
+    - update-grub
     - echo '#!/bin/bash' > /root/first-boot.sh
     - echo 'set -e' >> /root/first-boot.sh
     - echo 'exec > /root/first-boot.log 2>&1' >> /root/first-boot.sh
     - echo 'echo "Starting first-boot.sh"' >> /root/first-boot.sh
     - echo 'echo "Running initial local configuration"' >> /root/first-boot.sh
-    - echo 'systemctl enable fail2ban || true' >> /root/first-boot.sh
-    - echo 'systemctl restart fail2ban || true' >> /root/first-boot.sh
-    - echo 'aa-enforce /etc/apparmor.d/* || true' >> /root/first-boot.sh
-    - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab' >> /root/first-boot.sh
+    - echo 'systemctl enable fail2ban || { echo "Failed to enable fail2ban"; exit 1; }' >> /root/first-boot.sh
+    - echo 'systemctl restart fail2ban || { echo "Failed to restart fail2ban"; exit 1; }' >> /root/first-boot.sh
+    - echo 'aa-enforce /etc/apparmor.d/* || { echo "Failed to enforce AppArmor profiles"; exit 1; }' >> /root/first-boot.sh
+    - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab || { echo "Failed to modify fstab"; exit 1; }' >> /root/first-boot.sh
+    - echo 'gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" || { echo "Failed to set dark mode"; exit 1; }' >> /root/first-boot.sh
+    - echo 'gsettings set org.gnome.shell.extensions.dash-to-dock show-apps-at-top true || { echo "Failed to set show apps at top"; exit 1; }' >> /root/first-boot.sh
+    - echo 'gsettings set org.gnome.shell favorite-apps "['\''firefox_firefox.desktop'\'', '\''keepassxc_keepassxc.desktop'\'', '\''kleopatra.desktop'\'', '\''notesnook.desktop'\'', '\''torbrowser.desktop'\'', '\''org.gnome.Settings.desktop'\'', '\''org.gnome.gedit.desktop'\'', '\''org.gnome.SystemMonitor.desktop'\'']" || { echo "Failed to set favorite apps"; exit 1; }' >> /root/first-boot.sh
+    - echo 'chmod +x /root/first-boot.sh' >> /root/first-boot.sh
     - echo '#!/bin/bash' > /root/after-network.sh
     - echo 'set -e' >> /root/after-network.sh
     - echo 'exec > /root/after-network.log 2>&1' >> /root/after-network.sh
@@ -157,20 +163,20 @@ autoinstall:
     - echo 'apt-get update' >> /root/after-network.sh
     - echo 'apt-get install -y signal-desktop' >> /root/after-network.sh
     - echo 'echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv4.conf.all.rp_filter=1" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv4.conf.default.rp_filter=1" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv4.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv4.conf.all.secure_redirects=0" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv4.icmp_echo_ignore_broadcasts=1" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "kernel.randomize_va_space=2" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "vm.swappiness=10" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "vm.dirty_ratio=20" >> /etc/sysctl.conf' >> /root/after-network.sh
-    - echo 'echo "vm.dirty_background_ratio=5" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /root/after-network.sh
+    - echo 'echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /root/after-network.sh
+    - echo 'echo "net.ipv4.conf.all.rp_filter=1" >> /root/after-network.sh
+    - echo 'echo "net.ipv4.conf.default.rp_filter=1" >> /root/after-network.sh
+    - echo 'echo "net.ipv4.tcp_syncookies=1" >> /root/after-network.sh
+    - echo 'echo "net.ipv4.conf.all.accept_redirects=0" >> /root/after-network.sh
+    - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /root/after-network.sh
+    - echo 'echo "net.ipv4.conf.all.secure_redirects=0" >> /root/after-network.sh
+    - echo 'echo "net.ipv4.icmp_echo_ignore_broadcasts=1" >> /root/after-network.sh
+    - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /root/after-network.sh
+    - echo 'echo "kernel.randomize_va_space=2" >> /root/after-network.sh
+    - echo 'echo "vm.swappiness=10" >> /root/after-network.sh
+    - echo 'echo "vm.dirty_ratio=20" >> /root/after-network.sh
+    - echo 'echo "vm.dirty_background_ratio=5" >> /root/after-network.sh
     - echo 'sysctl -p || true' >> /root/after-network.sh
     - echo 'wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /etc/openvpn/nordvpn.zip' >> /root/after-network.sh
     - echo 'wget -q https://mullvad.net/download/openvpn-config/ -O /etc/openvpn/mullvad.zip' >> /root/after-network.sh
@@ -225,6 +231,4 @@ autoinstall:
     - systemctl enable after-network.service
     - chmod +x /root/first-boot.sh
     - chmod +x /root/after-network.sh
-    - echo 'sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash noresume\"/" /etc/default/grub' >> /root/first-boot.sh
-    - echo 'update-grub' >> /root/first-boot.sh
 
