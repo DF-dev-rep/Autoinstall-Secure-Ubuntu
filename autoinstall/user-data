@@ -116,7 +116,6 @@ autoinstall:
     - echo 'systemctl restart fail2ban || true' >> /root/first-boot.sh
     - echo 'aa-enforce /etc/apparmor.d/* || true' >> /root/first-boot.sh
     - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab' >> /root/first-boot.sh
-    - echo 'shutdown now' >> /root/first-boot.sh
     - echo '#!/bin/bash' > /root/after-network.sh
     - echo 'set -e' >> /root/after-network.sh
     - echo 'exec > /root/after-network.log 2>&1' >> /root/after-network.sh
