@@ -104,89 +104,101 @@ autoinstall:
     - clamav
     - clamav-daemon
     - kleopatra
+    - protonvpn
   snaps: []
   runcmd:
     - echo '#!/bin/bash' > /root/first-boot.sh
     - echo 'set -e' >> /root/first-boot.sh
-    - echo 'apt-get update' >> /root/first-boot.sh
-    - echo 'apt-get dist-upgrade --yes' >> /root/first-boot.sh
-    - echo 'apt autoremove --yes' >> /root/first-boot.sh
-    - echo 'apt-get install --yes nvidia-driver-570' >> /root/first-boot.sh
-    - echo 'sudo -u ubuntu dbus-launch gsettings set org.gnome.desktop.background picture-uri https://images5.alphacoders.com/652/652555.png' >> /root/first-boot.sh
-    - echo 'apt-get install -y software-properties-common' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:graphics-drivers/ppa || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:libreoffice/ppa || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:mozillateam/ppa || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:chromium-team/stable || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:git-core/ppa || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:chris-lea/node.js || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:videolan/master-daily || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true' >> /root/first-boot.sh
-    - echo 'apt-get update' >> /root/first-boot.sh
-    - echo 'apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli' >> /root/first-boot.sh
-    - echo 'apt-get remove -y mdadm || true' >> /root/first-boot.sh
-    - echo 'wget -q -O - https://repo.protonvpn.com/debian/public_key.asc | apt-key add -' >> /root/first-boot.sh
-    - echo 'echo "deb https://repo.protonvpn.com/debian stable main" > /etc/apt/sources.list.d/protonvpn.list' >> /root/first-boot.sh
-    - echo 'apt-get update' >> /root/first-boot.sh
-    - echo 'apt-get install -y protonvpn' >> /root/first-boot.sh
-    - echo 'freshclam' >> /root/first-boot.sh
-    - echo 'clamscan -r --bell -i / || true' >> /root/first-boot.sh
+    - echo 'exec > /root/first-boot.log 2>&1' >> /root/first-boot.sh
+    - echo 'echo "Starting first-boot.sh"' >> /root/first-boot.sh
+    - echo 'echo "Running initial local configuration"' >> /root/first-boot.sh
     - echo 'systemctl enable fail2ban || true' >> /root/first-boot.sh
     - echo 'systemctl restart fail2ban || true' >> /root/first-boot.sh
-    - echo 'rkhunter --update || true' >> /root/first-boot.sh
-    - echo 'rkhunter --propupd || true' >> /root/first-boot.sh
-    - echo 'rkhunter --check --skip-keypress || true' >> /root/first-boot.sh
-    - echo 'gufw default deny incoming || true' >> /root/first-boot.sh
-    - echo 'gufw default allow outgoing || true' >> /root/first-boot.sh
-    - echo 'gufw allow from any to any port 1194 proto udp || true' >> /root/first-boot.sh
-    - echo 'gufw allow 22/tcp || true' >> /root/first-boot.sh
-    - echo 'gufw enable || true' >> /root/first-boot.sh
-    - echo 'wget -O /tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb' >> /root/first-boot.sh
-    - echo 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' >> /root/first-boot.sh
-    - echo 'wget -O /tmp/notesnook.deb https://notesnook.com/releases/linux/notesnook_linux_x86_64.AppImage' >> /root/first-boot.sh
-    - echo 'chmod +x /tmp/notesnook.deb' >> /root/first-boot.sh
-    - echo 'mv /tmp/notesnook.deb /usr/local/bin/notesnook' >> /root/first-boot.sh
-    - echo 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | apt-key add -' >> /root/first-boot.sh
-    - echo 'echo "deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main" > /etc/apt/sources.list.d/signal-xenial.list' >> /root/first-boot.sh
-    - echo 'apt-get update' >> /root/first-boot.sh
-    - echo 'apt-get install -y signal-desktop' >> /root/first-boot.sh
-    - echo 'echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.conf.all.rp_filter=1" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.conf.default.rp_filter=1" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.conf.all.secure_redirects=0" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.icmp_echo_ignore_broadcasts=1" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "kernel.randomize_va_space=2" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "vm.swappiness=10" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "vm.dirty_ratio=20" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "vm.dirty_background_ratio=5" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'sysctl -p || true' >> /root/first-boot.sh
-    - echo 'wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /etc/openvpn/nordvpn.zip' >> /root/first-boot.sh
-    - echo 'wget -q https://mullvad.net/download/openvpn-config/ -O /etc/openvpn/mullvad.zip' >> /root/first-boot.sh
-    - echo 'wget -q https://protonvpn.com/download/protonvpn.zip -O /etc/openvpn/protonvpn.zip' >> /root/first-boot.sh
-    - echo 'unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn' >> /root/first-boot.sh
-    - echo 'unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad' >> /root/first-boot.sh
-    - echo 'unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn' >> /root/first-boot.sh
-    - echo 'for vpn_file in /etc/openvpn/nordvpn/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0" vpn.secrets "password=nordvpn_password" vpn.file "${vpn_file}"; done || true' >> /root/first-boot.sh
-    - echo 'for vpn_file in /etc/openvpn/mullvad/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0" vpn.secrets "password=mullvad_password" vpn.file "${vpn_file}"; done || true' >> /root/first-boot.sh
-    - echo 'for vpn_file in /etc/openvpn/protonvpn/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0" vpn.secrets "password=protonvpn_password" vpn.file "${vpn_file}"; done || true' >> /root/first-boot.sh
+    - echo 'aa-enforce /etc/apparmor.d/* || true' >> /root/first-boot.sh
+    - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab' >> /root/first-boot.sh
+    - echo 'shutdown now' >> /root/first-boot.sh
+    - echo '#!/bin/bash' > /root/after-network.sh
+    - echo 'set -e' >> /root/after-network.sh
+    - echo 'exec > /root/after-network.log 2>&1' >> /root/after-network.sh
+    - echo 'echo "Starting after-network.sh"' >> /root/after-network.sh
+    - echo 'apt-get update' >> /root/after-network.sh
+    - echo 'apt-get dist-upgrade --yes' >> /root/after-network.sh
+    - echo 'apt autoremove --yes' >> /root/after-network.sh
+    - echo 'apt-get install --yes nvidia-driver-570' >> /root/after-network.sh
+    - echo 'sudo -u ubuntu dbus-launch gsettings set org.gnome.desktop.background picture-uri https://images5.alphacoders.com/652/652555.png' >> /root/after-network.sh
+    - echo 'apt-get install -y software-properties-common' >> /root/after-network.sh
+    - echo 'add-apt-repository -y ppa:graphics-drivers/ppa || true' >> /root/after-network.sh
+    - echo 'add-apt-repository -y ppa:libreoffice/ppa || true' >> /root/after-network.sh
+    - echo 'add-apt-repository -y ppa:mozillateam/ppa || true' >> /root/after-network.sh
+    - echo 'add-apt-repository -y ppa:chromium-team/stable || true' >> /root/after-network.sh
+    - echo 'add-apt-repository -y ppa:git-core/ppa || true' >> /root/after-network.sh
+    - echo 'add-apt-repository -y ppa:chris-lea/node.js || true' >> /root/after-network.sh
+    - echo 'add-apt-repository -y ppa:videolan/master-daily || true' >> /root/after-network.sh
+    - echo 'add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true' >> /root/after-network.sh
+    - echo 'apt-get update' >> /root/after-network.sh
+    - echo 'apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli' >> /root/after-network.sh
+    - echo 'apt-get remove -y mdadm || true' >> /root/after-network.sh
+    - echo 'wget -q -O - https://repo.protonvpn.com/debian/public_key.asc | apt-key add -' >> /root/after-network.sh
+    - echo 'echo "deb https://repo.protonvpn.com/debian stable main" > /etc/apt/sources.list.d/protonvpn.list' >> /root/after-network.sh
+    - echo 'apt-get update' >> /root/after-network.sh
+    - echo 'apt-get install -y protonvpn' >> /root/after-network.sh
+    - echo 'freshclam' >> /root/after-network.sh
+    - echo 'clamscan -r --bell -i / || true' >> /root/after-network.sh
+    - echo 'gufw default deny incoming || true' >> /root/after-network.sh
+    - echo 'gufw default allow outgoing || true' >> /root/after-network.sh
+    - echo 'gufw allow from any to any port 1194 proto udp || true' >> /root/after-network.sh
+    - echo 'gufw allow 22/tcp || true' >> /root/after-network.sh
+    - echo 'gufw enable || true' >> /root/after-network.sh
+    - echo 'wget -O /tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb' >> /root/after-network.sh
+    - echo 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' >> /root/after-network.sh
+    - echo 'wget -O /tmp/notesnook.AppImage https://notesnook.com/releases/linux/notesnook_linux_x86_64.AppImage' >> /root/after-network.sh
+    - echo 'chmod +x /tmp/notesnook.AppImage' >> /root/after-network.sh
+    - echo 'mv /tmp/notesnook.AppImage /usr/local/bin/notesnook' >> /root/after-network.sh
+    - echo 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | apt-key add -' >> /root/after-network.sh
+    - echo 'echo "deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main" > /etc/apt/sources.list.d/signal-xenial.list' >> /root/after-network.sh
+    - echo 'apt-get update' >> /root/after-network.sh
+    - echo 'apt-get install -y signal-desktop' >> /root/after-network.sh
+    - echo 'echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv4.conf.all.rp_filter=1" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv4.conf.default.rp_filter=1" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv4.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv4.conf.all.secure_redirects=0" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv4.icmp_echo_ignore_broadcasts=1" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "kernel.randomize_va_space=2" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "vm.swappiness=10" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "vm.dirty_ratio=20" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'echo "vm.dirty_background_ratio=5" >> /etc/sysctl.conf' >> /root/after-network.sh
+    - echo 'sysctl -p || true' >> /root/after-network.sh
+    - echo 'wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /etc/openvpn/nordvpn.zip' >> /root/after-network.sh
+    - echo 'wget -q https://mullvad.net/download/openvpn-config/ -O /etc/openvpn/mullvad.zip' >> /root/after-network.sh
+    - echo 'wget -q https://protonvpn.com/download/protonvpn.zip -O /etc/openvpn/protonvpn.zip' >> /root/after-network.sh
+    - echo 'unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn' >> /root/after-network.sh
+    - echo 'unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad' >> /root/after-network.sh
+    - echo 'unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn' >> /root/after-network.sh
+    - echo 'for vpn_file in /etc/openvpn/nordvpn/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0" vpn.secrets "password=nordvpn_password" vpn.file "${vpn_file}"; done || true' >> /root/after-network.sh
+    - echo 'for vpn_file in /etc/openvpn/mullvad/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0" vpn.secrets "password=mullvad_password" vpn.file "${vpn_file}"; done || true' >> /root/after-network.sh
+    - echo 'for vpn_file in /etc/openvpn/protonvpn/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0" vpn.secrets "password=protonvpn_password" vpn.file "${vpn_file}"; done || true' >> /root/after-network.sh
     - echo '#!/bin/bash' > /etc/network/if-pre-up.d/random-vpn
     - echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /etc/network/if-pre-up.d/random-vpn
     - echo 'RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}' >> /etc/network/if-pre-up.d/random-vpn
     - echo 'nmcli con up "${RANDOM_VPN_FILE}"' >> /etc/network/if-pre-up.d/random-vpn
     - chmod +x /etc/network/if-pre-up.d/random-vpn
-    - echo 'aa-enforce /etc/apparmor.d/* || true' >> /root/first-boot.sh
-    - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab' >> /root/first-boot.sh
-    - echo 'shutdown now' >> /root/first-boot.sh
+    - echo 'rm /etc/systemd/system/first-boot.service' >> /root/after-network.sh
+    - echo 'rm /etc/systemd/system/after-network.service' >> /root/after-network.sh
+    - echo 'rm /root/first-boot.sh' >> /root/after-network.sh
+    - echo 'rm /root/after-network.sh' >> /root/after-network.sh
+    - echo 'shutdown now' >> /root/after-network.sh
     - |
       cat <<EOF | sudo tee /etc/systemd/system/first-boot.service
       [Unit]
       Description=Run first boot script
+      After=network-online.target
+      Wants=network-online.target
 
       [Service]
       ExecStart=/root/first-boot.sh
@@ -196,6 +208,25 @@ autoinstall:
       [Install]
       WantedBy=multi-user.target
       EOF
+    - |
+      cat <<EOF | sudo tee /etc/systemd/system/after-network.service
+      [Unit]
+      Description=Run after-network script
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      ExecStart=/root/after-network.sh
+      Type=oneshot
+      RemainAfterExit=true
+
+      [Install]
+      WantedBy=multi-user.target
+      EOF
     - systemctl enable first-boot.service
+    - systemctl enable after-network.service
     - chmod +x /root/first-boot.sh
+    - chmod +x /root/after-network.sh
+    - echo 'sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash noresume\"/" /etc/default/grub' >> /root/first-boot.sh
+    - echo 'update-grub' >> /root/first-boot.sh
 
