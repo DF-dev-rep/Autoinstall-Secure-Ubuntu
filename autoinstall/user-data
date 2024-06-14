@@ -9,6 +9,10 @@ autoinstall:
     hostname: secure-host
     username: secure-user
     password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
+  ssh:
+    install-server: true
+    authorized-keys:
+      - ssh-rsa YOUR_PUBLIC_KEY_HERE
   locale: en_GB.UTF-8
   timezone: Europe/London
   keyboard:
