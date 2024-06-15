@@ -128,6 +128,7 @@ autoinstall:
     - echo '#!/bin/bash' > /target/root/first-boot.sh
     - echo 'set -e' >> /target/root/first-boot.sh
     - echo 'exec > /root/first-boot.log 2>&1' >> /target/root/first-boot.sh
+    - echo 'exec > >(tee -i /root/first-boot-full.log) 2>&1' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
     - echo 'echo "Starting first-boot.sh"' >> /target/root/first-boot.sh
     - echo 'echo "Running initial local configuration"' >> /target/root/first-boot.sh
@@ -177,8 +178,8 @@ autoinstall:
     - echo 'apt-get remove -y mdadm || true' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
     - echo '# Add ProtonVPN repository and install ProtonVPN' >> /target/root/first-boot.sh
-    - echo 'wget -q -O - https://repo.protonvpn.com/debian/public_key.asc | apt-key add -' >> /target/root/first-boot.sh
-    - echo 'echo "deb https://repo.protonvpn.com/debian stable main" > /etc/apt/sources.list.d/protonvpn.list' >> /target/root/first-boot.sh
+    - echo 'wget https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-3_all.deb -O /tmp/protonvpn-stable-release.deb' >> /target/root/first-boot.sh
+    - echo 'dpkg -i /tmp/protonvpn-stable-release.deb' >> /target/root/first-boot.sh
     - echo 'apt-get update' >> /target/root/first-boot.sh
     - echo 'apt-get install -y protonvpn' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
@@ -198,8 +199,7 @@ autoinstall:
     - echo 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
     - echo '# Install Signal Desktop' >> /target/root/first-boot.sh
-    - echo 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor > signal-desktop-keyring.gpg' >> /target/root/first-boot.sh
-    - echo 'cat signal-desktop-keyring.gpg | sudo tee /usr/share/keyrings/signal-desktop-keyring.gpg > /dev/null' >> /target/root/first-boot.sh
+    - echo 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor > /usr/share/keyrings/signal-desktop-keyring.gpg' >> /target/root/first-boot.sh
     - echo 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main" | sudo tee /etc/apt/sources.list.d/signal-xenial.list' >> /target/root/first-boot.sh
     - echo 'apt update' >> /target/root/first-boot.sh
     - echo 'apt install -y signal-desktop' >> /target/root/first-boot.sh
@@ -215,52 +215,16 @@ autoinstall:
     - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
     - echo 'echo "net.ipv4.conf.all.secure_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
     - echo 'echo "net.ipv4.icmp_echo_ignore_broadcasts=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
-    - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
-    - echo 'echo "kernel.randomize_va_space=2" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
-    - echo 'echo "vm.swappiness=10" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
-    - echo 'echo "vm.dirty_ratio=20" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
-    - echo 'echo "vm.dirty_background_ratio=5" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /target/root/first-boot.sh
+    - echo 'echo "kernel.randomize_va_space=2" >> /target/root/first-boot.sh
+    - echo 'echo "vm.swappiness=10" >> /target/root/first-boot.sh
+    - echo 'echo "vm.dirty_ratio=20" >> /target/root/first-boot.sh
+    - echo 'echo "vm.dirty_background_ratio=5" >> /target/root/first-boot.sh
     - echo 'sysctl -p || true' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - echo '# Download and configure VPN files' >> /target/root/first-boot.sh
-    - echo 'wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /etc/openvpn/nordvpn.zip' >> /target/root/first-boot.sh
-    - echo 'wget -q https://mullvad.net/download/openvpn-config/ -O /etc/openvpn/mullvad.zip' >> /target/root/first-boot.sh
-    - echo 'wget -q https://protonvpn.com/download/protonvpn.zip -O /etc/openvpn/protonvpn.zip' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - echo '# Create directories for VPN configurations' >> /target/root/first-boot.sh
-    - echo 'mkdir -p /etc/openvpn/nordvpn' >> /target/root/first-boot.sh
-    - echo 'mkdir -p /etc/openvpn/mullvad' >> /target/root/first-boot.sh
-    - echo 'mkdir -p /etc/openvpn/protonvpn' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - echo 'unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn' >> /target/root/first-boot.sh
-    - echo 'unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad' >> /target/root/first-boot.sh
-    - echo 'unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - echo '# Configure VPN connections with placeholders' >> /target/root/first-boot.sh
-    - echo 'for vpn_file in /etc/openvpn/nordvpn/*.ovpn; do' >> /target/root/first-boot.sh
-    - echo '  nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=<username>,password-flags=0" vpn.secrets "password=<password>" vpn.file "${vpn_file}"' >> /target/root/first-boot.sh
-    - echo 'done || true' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - echo 'for vpn_file in /etc/openvpn/mullvad/*.ovpn; do' >> /target/root/first-boot.sh
-    - echo '  nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=<username>,password-flags=0" vpn.secrets "password=<password>" vpn.file "${vpn_file}"' >> /target/root/first-boot.sh
-    - echo 'done || true' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - echo 'for vpn_file in /etc/openvpn/protonvpn/*.ovpn; do' >> /target/root/first-boot.sh
-    - echo '  nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=<username>,password-flags=0" vpn.secrets "password=<password>" vpn.file "${vpn_file}"' >> /target/root/first-boot.sh
-    - echo 'done || true' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - echo '# Create a script to randomly connect to a VPN' >> /target/root/first-boot.sh
-    - echo 'cat <<EOF > /etc/network/if-pre-up.d/random-vpn' >> /target/root/first-boot.sh
-    - echo '#!/bin/bash' >> /target/root/first-boot.sh
-    - echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /target/root/first-boot.sh
-    - echo 'RANDOM_VPN_FILE=\${VPN_FILES[\$RANDOM % \${#VPN_FILES[@]}]}' >> /target/root/first-boot.sh
-    - echo 'nmcli con up "\${RANDOM_VPN_FILE}"' >> /target/root/first-boot.sh
-    - echo 'EOF' >> /target/root/first-boot.sh
-    - echo 'chmod +x /etc/network/if-pre-up.d/random-vpn' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
     - echo '# Enable dark mode and pin applications to the dash' >> /target/root/first-boot.sh
     - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'" >> /target/root/first-boot.sh
-    - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.shell favorite-apps \"'firefox.desktop', 'org.gnome.Nautilus.desktop', 'gnome-terminal.desktop', 'signal-desktop.desktop', 'obsidian.desktop', 'keepassxc.desktop', 'kleopatra.desktop', 'htop.desktop', 'gnome-system-monitor.desktop', 'gufw.desktop', 'torbrowser-launcher.desktop'\"" >> /target/root/first-boot.sh
+    - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.shell favorite-apps \"['firefox.desktop', 'org.gnome.Nautilus.desktop', 'gnome-terminal.desktop', 'signal-desktop.desktop', 'obsidian.desktop', 'keepassxc.desktop', 'kleopatra.desktop', 'htop.desktop', 'gnome-system-monitor.desktop', 'gufw.desktop', 'torbrowser-launcher.desktop']\"" >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
     - echo '# Enable automatic updates and regular scans for ClamAV and rkhunter' >> /target/root/first-boot.sh
     - echo 'echo "0 1 * * * root /usr/bin/freshclam --quiet" > /etc/cron.d/clamav-update' >> /target/root/first-boot.sh
