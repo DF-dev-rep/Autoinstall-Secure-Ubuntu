@@ -125,7 +125,6 @@ autoinstall:
     - curtin in-target --target=/target -- rm -rf /home/secure-user/snap
     - curtin in-target --target=/target -- systemctl disable systemd-networkd-wait-online.service
   runcmd:
-    - |
     - echo '#!/bin/bash' > /target/root/first-boot.sh
     - echo 'set -e' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
@@ -257,7 +256,6 @@ autoinstall:
     - echo 'WantedBy=graphical.target' >> /target/root/first-boot.sh
     - echo 'EOF' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
-
     - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
     - curtin in-target --target=/target -- systemctl enable first-boot.service
 
