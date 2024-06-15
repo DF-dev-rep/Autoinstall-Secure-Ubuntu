@@ -110,6 +110,10 @@ autoinstall:
   late-commands:
     - curtin in-target --target=/target -- sed -i 's/ds=nocloud-net[^"]*//' /etc/default/grub
     - curtin in-target --target=/target -- /bin/bash -c 'source /etc/default/grub && update-grub'
+    - curtin in-target --target=/target -- touch /etc/cloud/cloud-init.disabled
+    - curtin in-target --target=/target -- rm -rf /etc/cloud/cloud.cfg.d/subiquity-disable-cloudinit-networking.cfg
+    - curtin in-target --target=/target -- rm -rf /var/lib/cloud/instance
+    - curtin in-target --target=/target -- dpkg-reconfigure cloud-init
   runcmd:
     - echo '#!/bin/bash' > /root/first-boot.sh
     - echo 'set -e' >> /root/first-boot.sh
