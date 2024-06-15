@@ -108,8 +108,8 @@ autoinstall:
   package_upgrade: true
   snaps: []
   late-commands:
-    - curtin in-target --target=/target -- sed -i 's/ds=nocloud-net.*//' /etc/default/grub
-    - curtin in-target --target=/target -- update-grub
+    - curtin in-target --target=/target -- sed -i 's/ds=nocloud-net[^"]*//' /etc/default/grub
+    - curtin in-target --target=/target -- /bin/bash -c 'source /etc/default/grub && update-grub'
   runcmd:
     - echo '#!/bin/bash' > /root/first-boot.sh
     - echo 'set -e' >> /root/first-boot.sh
