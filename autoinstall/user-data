@@ -109,11 +109,17 @@ autoinstall:
   snaps: []
   late-commands:
     - curtin in-target --target=/target -- sed -i 's/ds=nocloud-net[^"]*//' /etc/default/grub
+    - curtin in-target --target=/target -- sed -i 's/autoinstall//' /etc/default/grub
+    - curtin in-target --target=/target -- sed -i 's/GRUB_TIMEOUT=0/GRUB_TIMEOUT=5/' /etc/default/grub
+    - curtin in-target --target=/target -- sed -i 's/GRUB_TIMEOUT_STYLE=hidden/GRUB_TIMEOUT_STYLE=menu/' /etc/default/grub
+    - curtin in-target --target=/target -- sed -i 's/quiet autoinstall/quiet splash/' /etc/default/grub
     - curtin in-target --target=/target -- /bin/bash -c 'source /etc/default/grub && update-grub'
+    - curtin in-target --target=/target -- systemctl disable sssd
     - curtin in-target --target=/target -- touch /etc/cloud/cloud-init.disabled
     - curtin in-target --target=/target -- rm -rf /etc/cloud/cloud.cfg.d/subiquity-disable-cloudinit-networking.cfg
     - curtin in-target --target=/target -- rm -rf /var/lib/cloud/instance
     - curtin in-target --target=/target -- dpkg-reconfigure cloud-init
+    - curtin in-target --target=/target -- sh -c 'echo "datasource_list: [ None ]" > /etc/cloud/cloud.cfg.d/90_dpkg.cfg'
   runcmd:
     - echo '#!/bin/bash' > /root/first-boot.sh
     - echo 'set -e' >> /root/first-boot.sh
