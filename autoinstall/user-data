@@ -250,6 +250,7 @@ autoinstall:
     - echo 'WantedBy=graphical.target' >> /target/root/first-boot.sh
     - echo 'EOF' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
-  - curtin in-target --target=/target -- systemctl enable first-boot.service
+
   - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
+  - curtin in-target --target=/target -- systemctl enable first-boot.service
 
