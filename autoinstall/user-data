@@ -104,6 +104,7 @@ autoinstall:
     - clamav
     - clamav-daemon
     - kleopatra
+    - htop
   package_update: true
   package_upgrade: true
   snaps: []
@@ -116,116 +117,186 @@ autoinstall:
     - curtin in-target --target=/target -- update-grub
     - curtin in-target --target=/target -- systemctl disable sssd
     - curtin in-target --target=/target -- touch /etc/cloud/cloud-init.disabled
+    - curtin in-target --target=/target -- systemctl disable snapd.service
+    - curtin in-target --target=/target -- systemctl disable snapd.socket
+    - curtin in-target --target=/target -- systemctl disable snapd.seeded.service
+    - curtin in-target --target=/target -- apt purge -y snapd
+    - curtin in-target --target=/target -- rm -rf /var/cache/snapd/
+    - curtin in-target --target=/target -- rm -rf /home/secure-user/snap
+    - curtin in-target --target=/target -- systemctl disable systemd-networkd-wait-online.service
   runcmd:
-    - echo '#!/bin/bash' > /root/first-boot.sh
-    - echo 'set -e' >> /root/first-boot.sh
-    - echo 'exec > /root/first-boot.log 2>&1' >> /root/first-boot.sh
-    - echo 'echo "Starting first-boot.sh"' >> /root/first-boot.sh
-    - echo 'echo "Running initial local configuration"' >> /root/first-boot.sh
-    - echo 'systemctl enable fail2ban || true' >> /root/first-boot.sh
-    - echo 'systemctl restart fail2ban || true' >> /root/first-boot.sh
-    - echo 'aa-enforce /etc/apparmor.d/* || true' >> /root/first-boot.sh
-    - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab' >> /root/first-boot.sh
-    - echo 'apt-get update' >> /root/first-boot.sh
-    - echo 'apt-get dist-upgrade --yes' >> /root/first-boot.sh
-    - echo 'apt autoremove --yes' >> /root/first-boot.sh
-    - echo 'apt-get install --yes nvidia-driver-570' >> /root/first-boot.sh
-    - echo 'sudo -u ubuntu dbus-launch gsettings set org.gnome.desktop.background picture-uri https://images5.alphacoders.com/652/652555.png' >> /root/first-boot.sh
-    - echo 'apt-get install -y software-properties-common' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:graphics-drivers/ppa || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:libreoffice/ppa || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:mozillateam/ppa || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:chromium-team/stable || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:git-core/ppa || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:chris-lea/node.js || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:videolan/master-daily || true' >> /root/first-boot.sh
-    - echo 'add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true' >> /root/first-boot.sh
-    - echo 'apt-get update' >> /root/first-boot.sh
-    - echo 'apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli' >> /root/first-boot.sh
-    - echo 'apt-get remove -y mdadm || true' >> /root/first-boot.sh
-    - echo 'wget -q -O - https://repo.protonvpn.com/debian/public_key.asc | apt-key add -' >> /root/first-boot.sh
-    - echo 'echo "deb https://repo.protonvpn.com/debian stable main" > /etc/apt/sources.list.d/protonvpn.list' >> /root/first-boot.sh
-    - echo 'apt-get update' >> /root/first-boot.sh
-    - echo 'apt-get install -y protonvpn' >> /root/first-boot.sh
-    - echo 'freshclam' >> /root/first-boot.sh
-    - echo 'clamscan -r --bell -i / || true' >> /root/first-boot.sh
-    - echo 'gufw default deny incoming || true' >> /root/first-boot.sh
-    - echo 'gufw default allow outgoing || true' >> /root/first-boot.sh
-    - echo 'gufw allow from any to any port 1194 proto udp || true' >> /root/first-boot.sh
-    - echo 'gufw allow 22/tcp || true' >> /root/first-boot.sh
-    - echo 'gufw enable || true' >> /root/first-boot.sh
-    - echo 'wget -O /tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb' >> /root/first-boot.sh
-    - echo 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' >> /root/first-boot.sh
-    - echo 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | apt-key add -' >> /root/first-boot.sh
-    - echo 'echo "deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main" > /etc/apt/sources.list.d/signal-xenial.list' >> /root/first-boot.sh
-    - echo 'apt-get update' >> /root/first-boot.sh
-    - echo 'apt-get install -y signal-desktop' >> /root/first-boot.sh
-    - echo 'echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /root/first-boot.sh
-    - echo 'echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /root/first-boot.sh
-    - echo 'echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.conf.all.rp_filter=1" >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.conf.default.rp_filter=1" >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.tcp_syncookies=1" >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.conf.all.accept_redirects=0" >> /root/first-boot.sh
-    - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.conf.all.secure_redirects=0" >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.icmp_echo_ignore_broadcasts=1" >> /root/first-boot.sh
-    - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /root/first-boot.sh
-    - echo 'echo "kernel.randomize_va_space=2" >> /root/first-boot.sh
-    - echo 'echo "vm.swappiness=10" >> /root/first-boot.sh
-    - echo 'echo "vm.dirty_ratio=20" >> /root/first-boot.sh
-    - echo 'echo "vm.dirty_background_ratio=5" >> /root/first-boot.sh
-    - echo 'sysctl -p || true' >> /root/first-boot.sh
-    - echo 'wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /etc/openvpn/nordvpn.zip' >> /root/first-boot.sh
-    - echo 'wget -q https://mullvad.net/download/openvpn-config/ -O /etc/openvpn/mullvad.zip' >> /root/first-boot.sh
-    - echo 'wget -q https://protonvpn.com/download/protonvpn.zip -O /etc/openvpn/protonvpn.zip' >> /root/first-boot.sh
-    - echo 'unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn' >> /root/first-boot.sh
-    - echo 'unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad' >> /root/first-boot.sh
-    - echo 'unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn' >> /root/first-boot.sh
-    - echo 'for vpn_file in /etc/openvpn/nordvpn/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=nordvpn_username,password-flags=0" vpn.secrets "password=nordvpn_password" vpn.file "${vpn_file}"; done || true' >> /root/first-boot.sh
-    - echo 'for vpn_file in /etc/openvpn/mullvad/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=mullvad_username,password-flags=0" vpn.secrets "password=mullvad_password" vpn.file "${vpn_file}"; done || true' >> /root/first-boot.sh
-    - echo 'for vpn_file in /etc/openvpn/protonvpn/*.ovpn; do nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=protonvpn_username,password-flags=0" vpn.secrets "password=protonvpn_password" vpn.file "${vpn_file}"; done || true' >> /root/first-boot.sh
-    - echo '#!/bin/bash' > /etc/network/if-pre-up.d/random-vpn
-    - echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /etc/network/if-pre-up.d/random-vpn
-    - echo 'RANDOM_VPN_FILE=${VPN_FILES[$RANDOM % ${#VPN_FILES[@]}]}' >> /etc/network/if-pre-up.d/random-vpn
-    - echo 'nmcli con up "${RANDOM_VPN_FILE}"' >> /etc/network/if-pre-up.d/random-vpn
-    - chmod +x /etc/network/if-pre-up.d/random-vpn
-    - echo 'rm /etc/systemd/system/first-boot.service' >> /root/first-boot.sh
-    - echo 'rm /etc/systemd/system/after-network.service' >> /root/first-boot.sh
-    - echo 'rm /root/first-boot.sh' >> /root/first-boot.sh
-    - echo 'rm /root/after-network.sh' >> /root/first-boot.sh
-    - |
-      cat <<EOF | sudo tee /etc/systemd/system/first-boot.service
-      [Unit]
-      Description=Run first boot script
-      After=network-online.target
-      Wants=network-online.target
-
-      [Service]
-      ExecStart=/root/first-boot.sh
-      Type=oneshot
-      RemainAfterExit=true
-
-      [Install]
-      WantedBy=multi-user.target
-      EOF
-    - |
-      cat <<EOF | sudo tee /etc/systemd/system/after-network.service
-      [Unit]
-      Description=Run after-network script
-      After=network-online.target
-      Wants=network-online.target
-
-      [Service]
-      ExecStart=/root/after-network.sh
-      Type=oneshot
-      RemainAfterExit=true
-
-      [Install]
-      WantedBy=multi-user.target
-      EOF
-    - curtin in-target --target=/target -- systemctl enable first-boot.service
-    - curtin in-target --target=/target -- systemctl enable after-network.service
-    - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
-    - curtin in-target --target=/target -- chmod +x /root/after-network.sh
+    - echo '#!/bin/bash' > /target/root/first-boot.sh
+    - echo 'set -e' >> /target/root/first-boot.sh
+    - echo 'exec > /root/first-boot.log 2>&1' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo 'echo "Starting first-boot.sh"' >> /target/root/first-boot.sh
+    - echo 'echo "Running initial local configuration"' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Enable and restart fail2ban' >> /target/root/first-boot.sh
+    - echo 'systemctl enable fail2ban || true' >> /target/root/first-boot.sh
+    - echo 'systemctl restart fail2ban || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Enforce AppArmor profiles' >> /target/root/first-boot.sh
+    - echo 'aa-enforce /etc/apparmor.d/* || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Update /etc/fstab for noatime and nodiratime' >> /target/root/first-boot.sh
+    - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Update and upgrade packages' >> /target/root/first-boot.sh
+    - echo 'apt-get update' >> /target/root/first-boot.sh
+    - echo 'apt-get dist-upgrade --yes' >> /target/root/first-boot.sh
+    - echo 'apt autoremove --yes' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Install NVIDIA drivers' >> /target/root/first-boot.sh
+    - echo 'apt-get install --yes nvidia-driver-570' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Set desktop background' >> /target/root/first-boot.sh
+    - echo 'wget -O /usr/share/backgrounds/secure-background.jpg https://unsplash.com/photos/ZZhlmDHiQTQ/download?force=true' >> /target/root/first-boot.sh
+    - echo 'sudo -u secure-user dbus-launch gsettings set org.gnome.desktop.background picture-uri "file:///usr/share/backgrounds/secure-background.jpg"' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Install software-properties-common for add-apt-repository' >> /target/root/first-boot.sh
+    - echo 'apt-get install -y software-properties-common' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Add necessary PPAs' >> /target/root/first-boot.sh
+    - echo 'add-apt-repository -y ppa:graphics-drivers/ppa || true' >> /target/root/first-boot.sh
+    - echo 'add-apt-repository -y ppa:libreoffice/ppa || true' >> /target/root/first-boot.sh
+    - echo 'add-apt-repository -y ppa:mozillateam/ppa || true' >> /target/root/first-boot.sh
+    - echo 'add-apt-repository -y ppa:chromium-team/stable || true' >> /target/root/first-boot.sh
+    - echo 'add-apt-repository -y ppa:git-core/ppa || true' >> /target/root/first-boot.sh
+    - echo 'add-apt-repository -y ppa:chris-lea/node.js || true' >> /target/root/first-boot.sh
+    - echo 'add-apt-repository -y ppa:videolan/master-daily || true' >> /target/root/first-boot.sh
+    - echo 'add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Update package list after adding PPAs' >> /target/root/first-boot.sh
+    - echo 'apt-get update' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Install additional packages' >> /target/root/first-boot.sh
+    - echo 'apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli htop torbrowser-launcher' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Remove unnecessary packages' >> /target/root/first-boot.sh
+    - echo 'apt-get remove -y mdadm || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Add ProtonVPN repository and install ProtonVPN' >> /target/root/first-boot.sh
+    - echo 'wget -q -O - https://repo.protonvpn.com/debian/public_key.asc | apt-key add -' >> /target/root/first-boot.sh
+    - echo 'echo "deb https://repo.protonvpn.com/debian stable main" > /etc/apt/sources.list.d/protonvpn.list' >> /target/root/first-boot.sh
+    - echo 'apt-get update' >> /target/root/first-boot.sh
+    - echo 'apt-get install -y protonvpn' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Update ClamAV database and run a scan' >> /target/root/first-boot.sh
+    - echo 'freshclam' >> /target/root/first-boot.sh
+    - echo 'clamscan -r --bell -i / || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Configure GUFW' >> /target/root/first-boot.sh
+    - echo 'gufw default deny incoming || true' >> /target/root/first-boot.sh
+    - echo 'gufw default allow outgoing || true' >> /target/root/first-boot.sh
+    - echo 'gufw allow from any to any port 1194 proto udp || true' >> /target/root/first-boot.sh
+    - echo 'gufw allow 22/tcp || true' >> /target/root/first-boot.sh
+    - echo 'gufw enable || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Download and install Obsidian' >> /target/root/first-boot.sh
+    - echo 'wget -O /tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb' >> /target/root/first-boot.sh
+    - echo 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Install Signal Desktop' >> /target/root/first-boot.sh
+    - echo 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor > signal-desktop-keyring.gpg' >> /target/root/first-boot.sh
+    - echo 'cat signal-desktop-keyring.gpg | sudo tee /usr/share/keyrings/signal-desktop-keyring.gpg > /dev/null' >> /target/root/first-boot.sh
+    - echo 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main" | sudo tee /etc/apt/sources.list.d/signal-xenial.list' >> /target/root/first-boot.sh
+    - echo 'apt update' >> /target/root/first-boot.sh
+    - echo 'apt install -y signal-desktop' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Network and security settings' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv4.conf.all.rp_filter=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv4.conf.default.rp_filter=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv4.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv4.conf.all.secure_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv4.icmp_echo_ignore_broadcasts=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "kernel.randomize_va_space=2" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "vm.swappiness=10" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "vm.dirty_ratio=20" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "vm.dirty_background_ratio=5" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'sysctl -p || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Download and configure VPN files' >> /target/root/first-boot.sh
+    - echo 'wget -q https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip -O /etc/openvpn/nordvpn.zip' >> /target/root/first-boot.sh
+    - echo 'wget -q https://mullvad.net/download/openvpn-config/ -O /etc/openvpn/mullvad.zip' >> /target/root/first-boot.sh
+    - echo 'wget -q https://protonvpn.com/download/protonvpn.zip -O /etc/openvpn/protonvpn.zip' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Create directories for VPN configurations' >> /target/root/first-boot.sh
+    - echo 'mkdir -p /etc/openvpn/nordvpn' >> /target/root/first-boot.sh
+    - echo 'mkdir -p /etc/openvpn/mullvad' >> /target/root/first-boot.sh
+    - echo 'mkdir -p /etc/openvpn/protonvpn' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo 'unzip /etc/openvpn/nordvpn.zip -d /etc/openvpn/nordvpn' >> /target/root/first-boot.sh
+    - echo 'unzip /etc/openvpn/mullvad.zip -d /etc/openvpn/mullvad' >> /target/root/first-boot.sh
+    - echo 'unzip /etc/openvpn/protonvpn.zip -d /etc/openvpn/protonvpn' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Configure VPN connections with placeholders' >> /target/root/first-boot.sh
+    - echo 'for vpn_file in /etc/openvpn/nordvpn/*.ovpn; do' >> /target/root/first-boot.sh
+    - echo '  nmcli con add type vpn ifname -- vpn-type openvpn con-name "nordvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=<username>,password-flags=0" vpn.secrets "password=<password>" vpn.file "${vpn_file}"' >> /target/root/first-boot.sh
+    - echo 'done || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo 'for vpn_file in /etc/openvpn/mullvad/*.ovpn; do' >> /target/root/first-boot.sh
+    - echo '  nmcli con add type vpn ifname -- vpn-type openvpn con-name "mullvad-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=<username>,password-flags=0" vpn.secrets "password=<password>" vpn.file "${vpn_file}"' >> /target/root/first-boot.sh
+    - echo 'done || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo 'for vpn_file in /etc/openvpn/protonvpn/*.ovpn; do' >> /target/root/first-boot.sh
+    - echo '  nmcli con add type vpn ifname -- vpn-type openvpn con-name "protonvpn-$(basename ${vpn_file})" -- connection.interface-name "" vpn.data "connection-type=password,service-type=openvpn,username=<username>,password-flags=0" vpn.secrets "password=<password>" vpn.file "${vpn_file}"' >> /target/root/first-boot.sh
+    - echo 'done || true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Create a script to randomly connect to a VPN' >> /target/root/first-boot.sh
+    - echo 'cat <<EOF > /etc/network/if-pre-up.d/random-vpn' >> /target/root/first-boot.sh
+    - echo '#!/bin/bash' >> /target/root/first-boot.sh
+    - echo 'VPN_FILES=(/etc/openvpn/nordvpn/*.ovpn /etc/openvpn/mullvad/*.ovpn /etc/openvpn/protonvpn/*.ovpn)' >> /target/root/first-boot.sh
+    - echo 'RANDOM_VPN_FILE=\${VPN_FILES[\$RANDOM % \${#VPN_FILES[@]}]}' >> /target/root/first-boot.sh
+    - echo 'nmcli con up "\${RANDOM_VPN_FILE}"' >> /target/root/first-boot.sh
+    - echo 'EOF' >> /target/root/first-boot.sh
+    - echo 'chmod +x /etc/network/if-pre-up.d/random-vpn' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Enable dark mode and pin applications to the dash' >> /target/root/first-boot.sh
+    - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'" >> /target/root/first-boot.sh
+    - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.shell favorite-apps \"'firefox.desktop', 'org.gnome.Nautilus.desktop', 'gnome-terminal.desktop', 'signal-desktop.desktop', 'obsidian.desktop', 'keepassxc.desktop', 'kleopatra.desktop', 'htop.desktop', 'gnome-system-monitor.desktop', 'gufw.desktop', 'torbrowser-launcher.desktop'\"" >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Enable automatic updates and regular scans for ClamAV and rkhunter' >> /target/root/first-boot.sh
+    - echo 'echo "0 1 * * * root /usr/bin/freshclam --quiet" > /etc/cron.d/clamav-update' >> /target/root/first-boot.sh
+    - echo 'echo "0 2 * * * root /usr/bin/clamscan -r --bell -i /" > /etc/cron.d/clamav-scan' >> /target/root/first-boot.sh
+    - echo 'echo "0 3 * * * root /usr/bin/rkhunter --update --quiet" > /etc/cron.d/rkhunter-update' >> /target/root/first-boot.sh
+    - echo 'echo "0 4 * * * root /usr/bin/rkhunter --check --quiet" > /etc/cron.d/rkhunter-scan' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Run ClamAV and rkhunter scans on first boot' >> /target/root/first-boot.sh
+    - echo 'freshclam' >> /target/root/first-boot.sh
+    - echo 'clamscan -r --bell -i / || true' >> /target/root/first-boot.sh
+    - echo 'rkhunter --update' >> /target/root/first-boot.sh
+    - echo 'rkhunter --check --quiet' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Cleanup tasks' >> /target/root/first-boot.sh
+    - echo 'rm /etc/systemd/system/first-boot.service' >> /target/root/first-boot.sh
+    - echo 'rm /root/first-boot.sh' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '# Create and enable systemd service for first boot script' >> /target/root/first-boot.sh
+    - echo 'cat <<EOF | sudo tee /etc/systemd/system/first-boot.service' >> /target/root/first-boot.sh
+    - echo '[Unit]' >> /target/root/first-boot.sh
+    - echo 'Description=Run first boot script' >> /target/root/first-boot.sh
+    - echo 'After=network-online.target' >> /target/root/first-boot.sh
+    - echo 'Wants=network-online.target' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '[Service]' >> /target/root/first-boot.sh
+    - echo 'ExecStart=/root/first-boot.sh' >> /target/root/first-boot.sh
+    - echo 'Type=oneshot' >> /target/root/first-boot.sh
+    - echo 'RemainAfterExit=true' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo '[Install]' >> /target/root/first-boot.sh
+    - echo 'WantedBy=multi-user.target' >> /target/root/first-boot.sh
+    - echo 'EOF' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+    - echo 'systemctl enable first-boot.service' >> /target/root/first-boot.sh
+    - echo 'chmod +x /root/first-boot.sh' >> /target/root/first-boot.sh
+    - echo '' >> /target/root/first-boot.sh
+  - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
+  - curtin in-target --target=/target -- systemctl enable first-boot.service
 
