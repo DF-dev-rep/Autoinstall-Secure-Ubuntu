@@ -124,6 +124,23 @@ autoinstall:
     - curtin in-target --target=/target -- rm -rf /var/cache/snapd/
     - curtin in-target --target=/target -- rm -rf /home/secure-user/snap
     - curtin in-target --target=/target -- systemctl disable systemd-networkd-wait-online.service
+    - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
+    - |
+      cat <<EOF | sudo tee /etc/systemd/system/first-boot-delayed.service
+      [Unit]
+      Description=Run first boot script after delay
+      After=graphical.target
+      Wants=graphical.target
+
+      [Service]
+      ExecStart=/bin/bash -c 'sleep 300; /root/first-boot.sh'
+      Type=oneshot
+      RemainAfterExit=true
+
+      [Install]
+      WantedBy=graphical.target
+      EOF
+    - curtin in-target --target=/target -- systemctl enable first-boot-delayed.service
   runcmd:
     - echo '#!/bin/bash' > /target/root/first-boot.sh
     - echo 'set -e' >> /target/root/first-boot.sh
@@ -240,22 +257,21 @@ autoinstall:
     - echo 'rm /etc/systemd/system/first-boot.service' >> /target/root/first-boot.sh
     - echo 'rm /root/first-boot.sh' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
-  - |
-    cat <<EOF | sudo tee /etc/systemd/system/first-boot-delayed.service
-    [Unit]
-    Description=Run first boot script after delay
-    After=graphical.target
-    Wants=graphical.target
+    - |
+      cat <<EOF | sudo tee /etc/systemd/system/first-boot-delayed.service
+      [Unit]
+      Description=Run first boot script after delay
+      After=graphical.target
+      Wants=graphical.target
 
-    [Service]
-    ExecStart=/bin/bash -c 'sleep 300; /root/first-boot.sh'
-    Type=oneshot
-    RemainAfterExit=true
+      [Service]
+      ExecStart=/bin/bash -c 'sleep 300; /root/first-boot.sh'
+      Type=oneshot
+      RemainAfterExit=true
 
-    [Install]
-    WantedBy=graphical.target
-    EOF
-
-  - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
-  - curtin in-target --target=/target -- systemctl enable first-boot-delayed.service
+      [Install]
+      WantedBy=graphical.target
+      EOF
+    - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
+    - curtin in-target --target=/target -- systemctl enable first-boot-delayed.service
 
