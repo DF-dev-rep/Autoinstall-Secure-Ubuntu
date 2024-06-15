@@ -250,9 +250,6 @@ autoinstall:
     - echo 'WantedBy=multi-user.target' >> /target/root/first-boot.sh
     - echo 'EOF' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
-    - echo 'systemctl enable first-boot.service' >> /target/root/first-boot.sh
-    - echo 'chmod +x /root/first-boot.sh' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-  - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
-  - curtin in-target --target=/target -- systemctl enable first-boot.service
+    - curtin in-target --target=/target -- systemctl enable first-boot.service
+    - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
 
