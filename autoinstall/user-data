@@ -238,8 +238,8 @@ autoinstall:
     - echo 'cat <<EOF | sudo tee /etc/systemd/system/first-boot.service' >> /target/root/first-boot.sh
     - echo '[Unit]' >> /target/root/first-boot.sh
     - echo 'Description=Run first boot script' >> /target/root/first-boot.sh
-    - echo 'After=network-online.target' >> /target/root/first-boot.sh
-    - echo 'Wants=network-online.target' >> /target/root/first-boot.sh
+    - echo 'After=graphical.target' >> /target/root/first-boot.sh
+    - echo 'Wants=graphical.target' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
     - echo '[Service]' >> /target/root/first-boot.sh
     - echo 'ExecStart=/root/first-boot.sh' >> /target/root/first-boot.sh
@@ -247,7 +247,7 @@ autoinstall:
     - echo 'RemainAfterExit=true' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
     - echo '[Install]' >> /target/root/first-boot.sh
-    - echo 'WantedBy=multi-user.target' >> /target/root/first-boot.sh
+    - echo 'WantedBy=graphical.target' >> /target/root/first-boot.sh
     - echo 'EOF' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
   - curtin in-target --target=/target -- systemctl enable first-boot.service
