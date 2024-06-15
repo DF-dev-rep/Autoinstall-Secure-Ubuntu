@@ -9,10 +9,6 @@ autoinstall:
     hostname: secure-host
     username: secure-user
     password: "$6$kTS2D0QZCV6HXAjb$HZNC6xHQVtckeq/zkvv0xKCoxMdjlH8pUq48Zn0/fSlxa/O2v0/.5CZKCJOn9iBmckVekRt/JDOCrWfTjRtXQ/"
-  ssh:
-    install-server: true
-    authorized-keys:
-      - ssh-rsa tnMUtbzF1aCjt0zoFfX5XLunmRkPJHm9KJKNfBPhfkg darkfuckerberg@meta1455.bot
   locale: en_GB.UTF-8
   timezone: Europe/London
   keyboard:
@@ -108,23 +104,22 @@ autoinstall:
     - clamav
     - clamav-daemon
     - kleopatra
+  package_update: true
+  package_upgrade: true
   snaps: []
+  late-commands:
+    - curtin in-target --target=/target -- sed -i 's/ds=nocloud-net.*//' /etc/default/grub
+    - curtin in-target --target=/target -- update-grub
   runcmd:
-    - sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash noresume\"/" /etc/default/grub
-    - update-grub
     - echo '#!/bin/bash' > /root/first-boot.sh
     - echo 'set -e' >> /root/first-boot.sh
     - echo 'exec > /root/first-boot.log 2>&1' >> /root/first-boot.sh
     - echo 'echo "Starting first-boot.sh"' >> /root/first-boot.sh
     - echo 'echo "Running initial local configuration"' >> /root/first-boot.sh
-    - echo 'systemctl enable fail2ban || { echo "Failed to enable fail2ban"; exit 1; }' >> /root/first-boot.sh
-    - echo 'systemctl restart fail2ban || { echo "Failed to restart fail2ban"; exit 1; }' >> /root/first-boot.sh
-    - echo 'aa-enforce /etc/apparmor.d/* || { echo "Failed to enforce AppArmor profiles"; exit 1; }' >> /root/first-boot.sh
-    - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab || { echo "Failed to modify fstab"; exit 1; }' >> /root/first-boot.sh
-    - echo 'gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" || { echo "Failed to set dark mode"; exit 1; }' >> /root/first-boot.sh
-    - echo 'gsettings set org.gnome.shell.extensions.dash-to-dock show-apps-at-top true || { echo "Failed to set show apps at top"; exit 1; }' >> /root/first-boot.sh
-    - echo 'gsettings set org.gnome.shell favorite-apps "['\''firefox_firefox.desktop'\'', '\''keepassxc_keepassxc.desktop'\'', '\''kleopatra.desktop'\'', '\''notesnook.desktop'\'', '\''torbrowser.desktop'\'', '\''org.gnome.Settings.desktop'\'', '\''org.gnome.gedit.desktop'\'', '\''org.gnome.SystemMonitor.desktop'\'']" || { echo "Failed to set favorite apps"; exit 1; }' >> /root/first-boot.sh
-    - echo 'chmod +x /root/first-boot.sh' >> /root/first-boot.sh
+    - echo 'systemctl enable fail2ban || true' >> /root/first-boot.sh
+    - echo 'systemctl restart fail2ban || true' >> /root/first-boot.sh
+    - echo 'aa-enforce /etc/apparmor.d/* || true' >> /root/first-boot.sh
+    - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab' >> /root/first-boot.sh
     - echo '#!/bin/bash' > /root/after-network.sh
     - echo 'set -e' >> /root/after-network.sh
     - echo 'exec > /root/after-network.log 2>&1' >> /root/after-network.sh
@@ -159,9 +154,6 @@ autoinstall:
     - echo 'gufw enable || true' >> /root/after-network.sh
     - echo 'wget -O /tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb' >> /root/after-network.sh
     - echo 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' >> /root/after-network.sh
-    - echo 'wget -O /tmp/notesnook.AppImage https://notesnook.com/releases/linux/notesnook_linux_x86_64.AppImage' >> /root/after-network.sh
-    - echo 'chmod +x /tmp/notesnook.AppImage' >> /root/after-network.sh
-    - echo 'mv /tmp/notesnook.AppImage /usr/local/bin/notesnook' >> /root/after-network.sh
     - echo 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | apt-key add -' >> /root/after-network.sh
     - echo 'echo "deb [arch=amd64] https://updates.signal.org/desktop/apt xenial main" > /etc/apt/sources.list.d/signal-xenial.list' >> /root/after-network.sh
     - echo 'apt-get update' >> /root/after-network.sh
@@ -200,7 +192,6 @@ autoinstall:
     - echo 'rm /etc/systemd/system/after-network.service' >> /root/after-network.sh
     - echo 'rm /root/first-boot.sh' >> /root/after-network.sh
     - echo 'rm /root/after-network.sh' >> /root/after-network.sh
-    - echo 'shutdown now' >> /root/after-network.sh
     - |
       cat <<EOF | sudo tee /etc/systemd/system/first-boot.service
       [Unit]
