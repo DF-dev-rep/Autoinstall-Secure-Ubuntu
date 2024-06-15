@@ -240,22 +240,22 @@ autoinstall:
     - echo 'rm /etc/systemd/system/first-boot.service' >> /target/root/first-boot.sh
     - echo 'rm /root/first-boot.sh' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
-    - echo '# Create and enable systemd service for first boot script' >> /target/root/first-boot.sh
-    - echo 'cat <<EOF > /etc/systemd/system/first-boot.service' >> /target/root/first-boot.sh
-    - echo '[Unit]' >> /target/root/first-boot.sh
-    - echo 'Description=Run first boot script' >> /target/root/first-boot.sh
-    - echo 'After=graphical.target' >> /target/root/first-boot.sh
-    - echo 'Wants=graphical.target' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - echo '[Service]' >> /target/root/first-boot.sh
-    - echo 'ExecStart=/root/first-boot.sh' >> /target/root/first-boot.sh
-    - echo 'Type=oneshot' >> /target/root/first-boot.sh
-    - echo 'RemainAfterExit=true' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - echo '[Install]' >> /target/root/first-boot.sh
-    - echo 'WantedBy=graphical.target' >> /target/root/first-boot.sh
-    - echo 'EOF' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
-    - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
-    - curtin in-target --target=/target -- systemctl enable first-boot.service
+  - |
+    cat <<EOF | sudo tee /etc/systemd/system/first-boot-delayed.service
+    [Unit]
+    Description=Run first boot script after delay
+    After=graphical.target
+    Wants=graphical.target
+
+    [Service]
+    ExecStart=/bin/bash -c 'sleep 300; /root/first-boot.sh'
+    Type=oneshot
+    RemainAfterExit=true
+
+    [Install]
+    WantedBy=graphical.target
+    EOF
+
+  - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
+  - curtin in-target --target=/target -- systemctl enable first-boot-delayed.service
 
