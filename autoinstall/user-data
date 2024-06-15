@@ -124,4 +124,134 @@ autoinstall:
     - curtin in-target --target=/target -- rm -rf /var/cache/snapd/
     - curtin in-target --target=/target -- rm -rf /home/secure-user/snap
     - curtin in-target --target=/target -- systemctl disable systemd-networkd-wait-online.service
+  runcmd:
+ runcmd:
+  - echo '#!/bin/bash' > /target/root/first-boot.sh
+  - echo 'set -e' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo 'echo "Starting first-boot.sh"' >> /target/root/first-boot.sh
+  - echo 'echo "Running initial local configuration"' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Enable and restart fail2ban' >> /target/root/first-boot.sh
+  - echo 'systemctl enable fail2ban || true' >> /target/root/first-boot.sh
+  - echo 'systemctl restart fail2ban || true' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Enforce AppArmor profiles' >> /target/root/first-boot.sh
+  - echo 'aa-enforce /etc/apparmor.d/* || true' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Update /etc/fstab for noatime and nodiratime' >> /target/root/first-boot.sh
+  - echo 'sed -i "/defaults/ s/defaults/defaults,noatime,nodiratime,commit=120/" /etc/fstab' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Update and upgrade packages' >> /target/root/first-boot.sh
+  - echo 'apt-get update' >> /target/root/first-boot.sh
+  - echo 'apt-get dist-upgrade --yes' >> /target/root/first-boot.sh
+  - echo 'apt autoremove --yes' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Install NVIDIA drivers' >> /target/root/first-boot.sh
+  - echo 'apt-get install --yes nvidia-driver-570' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Set desktop background' >> /target/root/first-boot.sh
+  - echo 'wget -O /usr/share/backgrounds/secure-background.jpg https://unsplash.com/photos/ZZhlmDHiQTQ/download?force=true' >> /target/root/first-boot.sh
+  - echo 'sudo -u secure-user dbus-launch gsettings set org.gnome.desktop.background picture-uri "file:///usr/share/backgrounds/secure-background.jpg"' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Install software-properties-common for add-apt-repository' >> /target/root/first-boot.sh
+  - echo 'apt-get install -y software-properties-common' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Add necessary PPAs' >> /target/root/first-boot.sh
+  - echo 'add-apt-repository -y ppa:graphics-drivers/ppa || true' >> /target/root/first-boot.sh
+  - echo 'add-apt-repository -y ppa:libreoffice/ppa || true' >> /target/root/first-boot.sh
+  - echo 'add-apt-repository -y ppa:mozillateam/ppa || true' >> /target/root/first-boot.sh
+  - echo 'add-apt-repository -y ppa:chromium-team/stable || true' >> /target/root/first-boot.sh
+  - echo 'add-apt-repository -y ppa:git-core/ppa || true' >> /target/root/first-boot.sh
+  - echo 'add-apt-repository -y ppa:chris-lea/node.js || true' >> /target/root/first-boot.sh
+  - echo 'add-apt-repository -y ppa:videolan/master-daily || true' >> /target/root/first-boot.sh
+  - echo 'add-apt-repository -y ppa:jonathonf/ffmpeg-4 || true' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Update package list after adding PPAs' >> /target/root/first-boot.sh
+  - echo 'apt-get update' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Install additional packages' >> /target/root/first-boot.sh
+  - echo 'apt-get install -y curl unzip fail2ban rkhunter gufw linux-headers-$(uname -r) secure-delete wipe gnupg clamav clamav-daemon gnome-tweaks dconf-cli htop torbrowser-launcher' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Remove unnecessary packages' >> /target/root/first-boot.sh
+  - echo 'apt-get remove -y mdadm || true' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Add ProtonVPN repository and install ProtonVPN' >> /target/root/first-boot.sh
+  - echo 'wget https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-3_all.deb -O /tmp/protonvpn-stable-release.deb' >> /target/root/first-boot.sh
+  - echo 'dpkg -i /tmp/protonvpn-stable-release.deb' >> /target/root/first-boot.sh
+  - echo 'apt-get update' >> /target/root/first-boot.sh
+  - echo 'apt-get install -y protonvpn' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Update ClamAV database and run a scan' >> /target/root/first-boot.sh
+  - echo 'freshclam' >> /target/root/first-boot.sh
+  - echo 'clamscan -r --bell -i / || true' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Configure GUFW' >> /target/root/first-boot.sh
+  - echo 'gufw default deny incoming || true' >> /target/root/first-boot.sh
+  - echo 'gufw default allow outgoing || true' >> /target/root/first-boot.sh
+  - echo 'gufw allow from any to any port 1194 proto udp || true' >> /target/root/first-boot.sh
+  - echo 'gufw allow 22/tcp || true' >> /target/root/first-boot.sh
+  - echo 'gufw enable || true' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Download and install Obsidian' >> /target/root/first-boot.sh
+  - echo 'wget -O /tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb' >> /target/root/first-boot.sh
+  - echo 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Network and security settings' >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv4.conf.all.rp_filter=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv4.conf.default.rp_filter=1" >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv4.tcp_syncookies=1" >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv4.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv4.conf.all.secure_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv4.icmp_echo_ignore_broadcasts=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+  - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /target/root/first-boot.sh
+  - echo 'echo "kernel.randomize_va_space=2" >> /target/root/first-boot.sh
+  - echo 'echo "vm.swappiness=10" >> /target/root/first-boot.sh
+  - echo 'echo "vm.dirty_ratio=20" >> /target/root/first-boot.sh
+  - echo 'echo "vm.dirty_background_ratio=5" >> /target/root/first-boot.sh
+  - echo 'sysctl -p || true' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Enable dark mode and pin applications to the dash' >> /target/root/first-boot.sh
+  - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'" >> /target/root/first-boot.sh
+  - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.shell favorite-apps \"['firefox.desktop', 'org.gnome.Nautilus.desktop', 'gnome-terminal.desktop', 'obsidian.desktop', 'keepassxc.desktop', 'kleopatra.desktop', 'htop.desktop', 'gnome-system-monitor.desktop', 'gufw.desktop', 'torbrowser-launcher.desktop']\"" >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Enable automatic updates and regular scans for ClamAV and rkhunter' >> /target/root/first-boot.sh
+  - echo 'echo "0 1 * * * root /usr/bin/freshclam --quiet" > /etc/cron.d/clamav-update' >> /target/root/first-boot.sh
+  - echo 'echo "0 2 * * * root /usr/bin/clamscan -r --bell -i /" > /etc/cron.d/clamav-scan' >> /target/root/first-boot.sh
+  - echo 'echo "0 3 * * * root /usr/bin/rkhunter --update --quiet" > /etc/cron.d/rkhunter-update' >> /target/root/first-boot.sh
+  - echo 'echo "0 4 * * * root /usr/bin/rkhunter --check --quiet" > /etc/cron.d/rkhunter-scan' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Run ClamAV and rkhunter scans on first boot' >> /target/root/first-boot.sh
+  - echo 'freshclam' >> /target/root/first-boot.sh
+  - echo 'clamscan -r --bell -i / || true' >> /target/root/first-boot.sh
+  - echo 'rkhunter --update' >> /target/root/first-boot.sh
+  - echo 'rkhunter --check --quiet' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Cleanup tasks' >> /target/root/first-boot.sh
+  - echo 'rm /etc/systemd/system/first-boot.service' >> /target/root/first-boot.sh
+  - echo 'rm /root/first-boot.sh' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '# Create and enable systemd service for first boot script' >> /target/root/first-boot.sh
+  - echo 'cat <<EOF > /etc/systemd/system/first-boot.service' >> /target/root/first-boot.sh
+  - echo '[Unit]' >> /target/root/first-boot.sh
+  - echo 'Description=Run first boot script' >> /target/root/first-boot.sh
+  - echo 'After=graphical.target' >> /target/root/first-boot.sh
+  - echo 'Wants=graphical.target' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '[Service]' >> /target/root/first-boot.sh
+  - echo 'ExecStart=/root/first-boot.sh' >> /target/root/first-boot.sh
+  - echo 'Type=oneshot' >> /target/root/first-boot.sh
+  - echo 'RemainAfterExit=true' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+  - echo '[Install]' >> /target/root/first-boot.sh
+  - echo 'WantedBy=graphical.target' >> /target/root/first-boot.sh
+  - echo 'EOF' >> /target/root/first-boot.sh
+  - echo '' >> /target/root/first-boot.sh
+
+  - curtin in-target --target=/target -- chmod +x /root/first-boot.sh
+  - curtin in-target --target=/target -- systemctl enable first-boot.service
 
