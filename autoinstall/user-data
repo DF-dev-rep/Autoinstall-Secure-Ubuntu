@@ -196,12 +196,6 @@ autoinstall:
     - echo 'wget -O /tmp/obsidian.deb https://github.com/obsidianmd/obsidian-releases/releases/download/v1.6.3/obsidian_1.6.3_amd64.deb' >> /target/root/first-boot.sh
     - echo 'dpkg -i /tmp/obsidian.deb || apt-get -f install -y' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
-    - echo '# Install Signal Desktop' >> /target/root/first-boot.sh
-    - echo 'wget -O- https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor > /usr/share/keyrings/signal-desktop-keyring.gpg' >> /target/root/first-boot.sh
-    - echo 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main" | sudo tee /etc/apt/sources.list.d/signal-xenial.list' >> /target/root/first-boot.sh
-    - echo 'apt update' >> /target/root/first-boot.sh
-    - echo 'apt install -y signal-desktop' >> /target/root/first-boot.sh
-    - echo '' >> /target/root/first-boot.sh
     - echo '# Network and security settings' >> /target/root/first-boot.sh
     - echo 'echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
     - echo 'echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
@@ -210,7 +204,7 @@ autoinstall:
     - echo 'echo "net.ipv4.conf.default.rp_filter=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
     - echo 'echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
     - echo 'echo "net.ipv4.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
-    - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
+    - echo 'echo "net.ipv6.conf.all.accept_redirects=0" >> /target/root/first-boot.sh
     - echo 'echo "net.ipv4.conf.all.secure_redirects=0" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
     - echo 'echo "net.ipv4.icmp_echo_ignore_broadcasts=1" >> /etc/sysctl.conf' >> /target/root/first-boot.sh
     - echo 'echo "net.ipv4.icmp_ignore_bogus_error_responses=1" >> /target/root/first-boot.sh
@@ -222,7 +216,7 @@ autoinstall:
     - echo '' >> /target/root/first-boot.sh
     - echo '# Enable dark mode and pin applications to the dash' >> /target/root/first-boot.sh
     - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'" >> /target/root/first-boot.sh
-    - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.shell favorite-apps \"['firefox.desktop', 'org.gnome.Nautilus.desktop', 'gnome-terminal.desktop', 'signal-desktop.desktop', 'obsidian.desktop', 'keepassxc.desktop', 'kleopatra.desktop', 'htop.desktop', 'gnome-system-monitor.desktop', 'gufw.desktop', 'torbrowser-launcher.desktop']\"" >> /target/root/first-boot.sh
+    - echo "sudo -u secure-user dbus-launch gsettings set org.gnome.shell favorite-apps \"['firefox.desktop', 'org.gnome.Nautilus.desktop', 'gnome-terminal.desktop', 'obsidian.desktop', 'keepassxc.desktop', 'kleopatra.desktop', 'htop.desktop', 'gnome-system-monitor.desktop', 'gufw.desktop', 'torbrowser-launcher.desktop']\"" >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
     - echo '# Enable automatic updates and regular scans for ClamAV and rkhunter' >> /target/root/first-boot.sh
     - echo 'echo "0 1 * * * root /usr/bin/freshclam --quiet" > /etc/cron.d/clamav-update' >> /target/root/first-boot.sh
