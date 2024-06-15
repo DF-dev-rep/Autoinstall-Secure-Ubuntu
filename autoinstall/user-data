@@ -127,8 +127,6 @@ autoinstall:
   runcmd:
     - echo '#!/bin/bash' > /target/root/first-boot.sh
     - echo 'set -e' >> /target/root/first-boot.sh
-    - echo 'exec > /root/first-boot.log 2>&1' >> /target/root/first-boot.sh
-    - echo 'exec > >(tee -i /root/first-boot-full.log) 2>&1' >> /target/root/first-boot.sh
     - echo '' >> /target/root/first-boot.sh
     - echo 'echo "Starting first-boot.sh"' >> /target/root/first-boot.sh
     - echo 'echo "Running initial local configuration"' >> /target/root/first-boot.sh
