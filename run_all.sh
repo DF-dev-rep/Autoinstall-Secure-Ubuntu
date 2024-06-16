@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Source utility scripts
+# Source utility scripts using relative paths
 source "$(dirname "$0")/utils/logging.sh"
 source "$(dirname "$0")/utils/download.sh"
 source "$(dirname "$0")/utils/validate.sh"
@@ -16,7 +16,7 @@ LOGFILE="/root/setup.log"
 exec > >(tee -a ${LOGFILE}) 2>&1
 
 # GitHub repository URL where the scripts are stored
-REPO_URL="https://raw.githubusercontent.com/yourusername/Autoinstall-Secure-Ubuntu/main/scripts"
+REPO_URL="https://DF-dev-rep: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@raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/scripts"
 
 # Display Zenity checklist for user to select scripts to run
 SELECTION=$(zenity --list --checklist \
