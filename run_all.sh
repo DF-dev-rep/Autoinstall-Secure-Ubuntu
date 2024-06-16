@@ -8,28 +8,45 @@ source "$(dirname "$0")/utils/validate.sh"
 # Validate that the script is running with root privileges
 validate_root
 
-# Ensure Zenity and wget are installed
-apt-get update && apt-get install -y zenity wget
+# Ensure necessary tools are installed
+apt-get update && apt-get install -y zenity wget xdotool xdpyinfo
 
 # Log file
 LOGFILE="/root/setup.log"
 exec > >(tee -a ${LOGFILE}) 2>&1
 
 # GitHub repository URL where the scripts are stored
-REPO_URL="https://DF-dev-rep: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@raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/scripts"
+REPO_URL="https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/scripts"
 
-# Display Zenity checklist for user to select scripts to run
-SELECTION=$(zenity --list --checklist \
-  --title="Select Installation Packages" \
-  --text="Choose the packages you want to install:" \
-  --column="Select" --column="Script" --column="Description" \
-  FALSE "setup_security.sh" "Setup security configurations" \
-  FALSE "configure_network.sh" "Configure network settings" \
-  FALSE "install_applications.sh" "Install applications" \
-  FALSE "setup_display.sh" "Setup display settings" \
-  FALSE "install_drivers_updates.sh" "Install drivers and updates" \
-  FALSE "vpn_credentials.sh" "Configure VPN credentials" \
-  --separator=":")
+# Function to display Zenity checklist and center it on the screen
+display_zenity_checklist() {
+  WIDTH=800  # Set the width in pixels
+  HEIGHT=600 # Set the height in pixels
+  SELECTION=$(zenity --list --checklist \
+    --width=$WIDTH \
+    --height=$HEIGHT \
+    --title="Select Installation Packages" \
+    --text="Choose the packages you want to install:" \
+    --column="Select" --column="Script" --column="Description" \
+    FALSE "setup_security.sh" "Setup security configurations" \
+    FALSE "configure_network.sh" "Configure network settings" \
+    FALSE "install_applications.sh" "Install applications" \
+    FALSE "setup_display.sh" "Setup display settings" \
+    FALSE "install_drivers_updates.sh" "Install drivers and updates" \
+    FALSE "vpn_credentials.sh" "Configure VPN credentials" \
+    --separator=":")
+
+  # Center the Zenity window
+  zenity_window_id=$(xdotool search --onlyvisible --class zenity | head -n 1)
+  screen_width=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f1)
+  screen_height=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f2)
+  window_x=$(( (screen_width - WIDTH) / 2 ))
+  window_y=$(( (screen_height - HEIGHT) / 2 ))
+  xdotool windowmove $zenity_window_id $window_x $window_y
+}
+
+# Display the Zenity checklist
+display_zenity_checklist
 
 # Convert selection to an array
 IFS=':' read -r -a SCRIPTS <<< "$SELECTION"
