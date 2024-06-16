@@ -9,7 +9,7 @@ source "$(dirname "$0")/utils/validate.sh"
 validate_root
 
 # Ensure necessary tools are installed
-apt-get update && apt-get install -y zenity wget xdotool xdpyinfo
+apt-get update && apt-get install -y zenity wget x11-utils xdotool
 
 # Log file
 LOGFILE="/root/setup.log"
