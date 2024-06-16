@@ -56,3 +56,14 @@ rm -f /tmp/obsidian.deb /tmp/protonvpn.deb /tmp/github-desktop.deb
 
 echo "Cleanup complete." | tee -a /root/setup.log
 
+# Pin applications to the dash
+echo "Pinning applications to the dash..." | tee -a /root/setup.log
+dconf write /org/gnome/shell/favorite-apps "['firefox_firefox.desktop', 'signal-desktop.desktop', 'obsidian.desktop', 'protonvpn.desktop', 'github-desktop.desktop']"
+
+# Switch to dark mode
+echo "Switching system to dark mode..." | tee -a /root/setup.log
+gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+
+echo "Applications pinned and dark mode enabled." | tee -a /root/setup.log
+
