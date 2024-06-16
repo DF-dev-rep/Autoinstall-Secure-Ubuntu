@@ -78,8 +78,8 @@ done
 
 # Final cleanup
 log_info "Cleaning up..."
-rm /etc/systemd/system/first-boot-delayed.service
-rm /root/run_all.sh
+rm /etc/systemd/system/first-boot-delayed.service || true
+rm /root/run_all.sh || true
 
 log_info "Setup complete."
 
