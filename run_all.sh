@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Source utility scripts
-source /root/utils/logging.sh
-source /root/utils/download.sh
-source /root/utils/validate.sh
+source "$(dirname "$0")/utils/logging.sh"
+source "$(dirname "$0")/utils/download.sh"
+source "$(dirname "$0")/utils/validate.sh"
 
 # Validate that the script is running with root privileges
 validate_root
