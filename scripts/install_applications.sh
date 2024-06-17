@@ -39,10 +39,6 @@ add-apt-repository -y ppa:mozillateam/ppa | tee -a /root/setup.log
 apt-get update | tee -a /root/setup.log
 apt-get install -y firefox | tee -a /root/setup.log
 
-# Install NVIDIA driver 570
-echo "Installing NVIDIA driver 570..." | tee -a /root/setup.log
-apt-get install -y nvidia-driver-570 | tee -a /root/setup.log
-
 # Install GitHub Desktop
 echo "Installing GitHub Desktop..." | tee -a /root/setup.log
 wget -O /tmp/github-desktop.deb https://github.com/shiftkey/desktop/releases/download/release-2.9.9-linux1/GitHubDesktop-linux-2.9.9-linux1.deb
@@ -58,7 +54,9 @@ echo "Cleanup complete." | tee -a /root/setup.log
 
 # Pin applications to the dash
 echo "Pinning applications to the dash..." | tee -a /root/setup.log
-dconf write /org/gnome/shell/favorite-apps "['firefox_firefox.desktop', 'signal-desktop.desktop', 'obsidian.desktop', 'protonvpn.desktop', 'github-desktop.desktop']"
+CURRENT_FAVORITES=$(gsettings get org.gnome.shell favorite-apps)
+NEW_FAVORITES="['firefox.desktop', 'signal-desktop.desktop', 'obsidian.desktop', 'protonvpn.desktop', 'github-desktop.desktop']"
+gsettings set org.gnome.shell favorite-apps "$NEW_FAVORITES"
 
 # Switch to dark mode
 echo "Switching system to dark mode..." | tee -a /root/setup.log
