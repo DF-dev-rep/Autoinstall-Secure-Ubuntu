@@ -18,28 +18,19 @@ exec > >(tee -a ${LOGFILE}) 2>&1
 # GitHub repository URL where the scripts are stored
 REPO_URL="https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/scripts"
 
-# Determine the user running the script with sudo
-USER_HOME=$(eval echo "~$SUDO_USER")
-LOCAL_SCRIPT_PATH="$USER_HOME/Blackbuntu.sh"
-
-# Ensure the script is available locally
-cp "$(realpath $0)" "$LOCAL_SCRIPT_PATH"
-chmod +x "$LOCAL_SCRIPT_PATH"
-
 # Create desktop shortcut for Blackbuntu.sh at the beginning
-cat <<EOF > "$USER_HOME/Desktop/Blackbuntu.desktop"
+cat <<EOF > /home/$USER/Desktop/Blackbuntu.desktop
 [Desktop Entry]
 Name=Blackbuntu
 Comment=Run all setup scripts
-Exec=$LOCAL_SCRIPT_PATH
+Exec=/root/Blackbuntu.sh
 Icon=utilities-terminal
 Terminal=true
 Type=Application
 EOF
 
 # Set permissions for the desktop shortcut
-chmod +x "$USER_HOME/Desktop/Blackbuntu.desktop"
-chown $SUDO_USER:$SUDO_USER "$USER_HOME/Desktop/Blackbuntu.desktop"
+chmod +x /home/$USER/Desktop/Blackbuntu.desktop
 
 # Log that the desktop shortcut was created
 log_info "Desktop shortcut for Blackbuntu.sh created."
@@ -64,13 +55,11 @@ display_zenity_checklist() {
 
   # Center the Zenity window
   zenity_window_id=$(xdotool search --onlyvisible --class zenity | head -n 1)
-  if [ -n "$zenity_window_id" ]; then
-    screen_width=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f1)
-    screen_height=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f2)
-    window_x=$(( (screen_width - WIDTH) / 2 ))
-    window_y=$(( (screen_height - HEIGHT) / 2 ))
-    xdotool windowmove $zenity_window_id $window_x $window_y
-  fi
+  screen_width=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f1)
+  screen_height=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f2)
+  window_x=$(( (screen_width - WIDTH) / 2 ))
+  window_y=$(( (screen_height - HEIGHT) / 2 ))
+  xdotool windowmove $zenity_window_id $window_x $window_y
 }
 
 # Display the Zenity checklist
@@ -129,6 +118,7 @@ done
 cleanup_files() {
     local files=(
         "/root/protonvpn-stable-release_1.0.3-3_all.deb"
+        "/root/Blackbuntu.sh"
     )
     
     for file in "${files[@]}"; do
