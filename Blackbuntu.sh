@@ -33,7 +33,7 @@ display_zenity_checklist() {
     FALSE "install_applications.sh" "Install applications" \
     FALSE "setup_display.sh" "Setup display settings" \
     FALSE "install_drivers_updates.sh" "Install drivers and updates" \
-    FALSE "vpn_setup.sh" "Configure VPNs" \
+    FALSE "vpn_credentials.sh" "Configure VPN credentials" \
     --separator=":")
 
   # Center the Zenity window
@@ -110,7 +110,7 @@ USER_HOME=$(eval echo "~$SUDO_USER")
 DOWNLOAD_SCRIPT_PATH="$USER_HOME/Download_and_Run_Blackbuntu.sh"
 cat <<EOF > "$DOWNLOAD_SCRIPT_PATH"
 #!/bin/bash
-wget -O /tmp/Blackbuntu.sh https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/Blackbuntu.sh
+wget -O /tmp/Blackbuntu.sh https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/run_all.sh
 chmod +x /tmp/Blackbuntu.sh
 /tmp/Blackbuntu.sh
 EOF
