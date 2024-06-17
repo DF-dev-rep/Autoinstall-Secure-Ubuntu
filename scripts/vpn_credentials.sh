@@ -67,5 +67,13 @@ chmod +x /home/$USER/Desktop/protonvpn.desktop
 chmod +x /home/$USER/Desktop/mullvad-vpn.desktop
 chmod +x /home/$USER/Desktop/nordvpn.desktop
 
-echo "VPN installation and desktop icon setup complete." | tee -a /root/setup.log
+# Allow launching of desktop shortcuts
+gio set /home/$USER/Desktop/protonvpn.desktop metadata::trusted true
+gio set /home/$USER/Desktop/mullvad-vpn.desktop metadata::trusted true
+gio set /home/$USER/Desktop/nordvpn.desktop metadata::trusted true
+
+# Refresh the desktop to show the new icons
+xdg-desktop-menu forceupdate
+
+echo "[INFO] VPN installation and desktop icon setup complete."
 
