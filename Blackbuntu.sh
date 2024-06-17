@@ -18,12 +18,19 @@ exec > >(tee -a ${LOGFILE}) 2>&1
 # GitHub repository URL where the scripts are stored
 REPO_URL="https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/scripts"
 
+# Path to store the Blackbuntu.sh script
+LOCAL_SCRIPT_PATH="/home/$USER/Blackbuntu.sh"
+
+# Ensure the script is available locally
+cp "$(realpath $0)" "$LOCAL_SCRIPT_PATH"
+chmod +x "$LOCAL_SCRIPT_PATH"
+
 # Create desktop shortcut for Blackbuntu.sh at the beginning
 cat <<EOF > /home/$USER/Desktop/Blackbuntu.desktop
 [Desktop Entry]
 Name=Blackbuntu
 Comment=Run all setup scripts
-Exec=/root/Blackbuntu.sh
+Exec=$LOCAL_SCRIPT_PATH
 Icon=utilities-terminal
 Terminal=true
 Type=Application
@@ -50,7 +57,7 @@ display_zenity_checklist() {
     FALSE "install_applications.sh" "Install applications" \
     FALSE "setup_display.sh" "Setup display settings" \
     FALSE "install_drivers_updates.sh" "Install drivers and updates" \
-    FALSE "vpn_credentials.sh" "Configure VPN credentials" \
+    FALSE "vpn_setup.sh" "Configure VPNs" \
     --separator=":")
 
   # Center the Zenity window
@@ -89,7 +96,11 @@ run_script() {
 # Function to clean up downloaded script
 cleanup_script() {
     local script_name="$1"
-    rm "/root/$script_name"
+    if [ -f "/root/$script_name" ]; then
+        rm "/root/$script_name"
+    else
+        log_info "/root/$script_name does not exist. No need to remove."
+    fi
 }
 
 # Download and run each selected script sequentially
@@ -110,11 +121,24 @@ for script in "${SCRIPTS[@]}"; do
     cleanup_script "$script"
 done
 
-# Final cleanup of downloaded scripts
-log_info "Cleaning up downloaded scripts..."
-for script in "${SCRIPTS[@]}"; do
-  rm "/root/$script"
-done
+# Additional cleanup for specific files like the ProtonVPN .deb file
+cleanup_files() {
+    local files=(
+        "/root/protonvpn-stable-release_1.0.3-3_all.deb"
+    )
+    
+    for file in "${files[@]}"; do
+        if [ -f "$file" ]; then
+            rm "$file"
+        else
+            log_info "$file does not exist. No need to remove."
+        fi
+    done
+}
+
+# Final cleanup
+log_info "Cleaning up additional files..."
+cleanup_files
 
 log_info "Setup complete."
 
