@@ -18,15 +18,16 @@ exec > >(tee -a ${LOGFILE}) 2>&1
 # GitHub repository URL where the scripts are stored
 REPO_URL="https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/scripts"
 
-# Path to store the Blackbuntu.sh script
-LOCAL_SCRIPT_PATH="/home/$USER/Blackbuntu.sh"
+# Determine the user running the script with sudo
+USER_HOME=$(eval echo "~$SUDO_USER")
+LOCAL_SCRIPT_PATH="$USER_HOME/Blackbuntu.sh"
 
 # Ensure the script is available locally
 cp "$(realpath $0)" "$LOCAL_SCRIPT_PATH"
 chmod +x "$LOCAL_SCRIPT_PATH"
 
 # Create desktop shortcut for Blackbuntu.sh at the beginning
-cat <<EOF > /home/$USER/Desktop/Blackbuntu.desktop
+cat <<EOF > "$USER_HOME/Desktop/Blackbuntu.desktop"
 [Desktop Entry]
 Name=Blackbuntu
 Comment=Run all setup scripts
@@ -37,7 +38,8 @@ Type=Application
 EOF
 
 # Set permissions for the desktop shortcut
-chmod +x /home/$USER/Desktop/Blackbuntu.desktop
+chmod +x "$USER_HOME/Desktop/Blackbuntu.desktop"
+chown $SUDO_USER:$SUDO_USER "$USER_HOME/Desktop/Blackbuntu.desktop"
 
 # Log that the desktop shortcut was created
 log_info "Desktop shortcut for Blackbuntu.sh created."
@@ -62,11 +64,13 @@ display_zenity_checklist() {
 
   # Center the Zenity window
   zenity_window_id=$(xdotool search --onlyvisible --class zenity | head -n 1)
-  screen_width=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f1)
-  screen_height=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f2)
-  window_x=$(( (screen_width - WIDTH) / 2 ))
-  window_y=$(( (screen_height - HEIGHT) / 2 ))
-  xdotool windowmove $zenity_window_id $window_x $window_y
+  if [ -n "$zenity_window_id" ]; then
+    screen_width=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f1)
+    screen_height=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f2)
+    window_x=$(( (screen_width - WIDTH) / 2 ))
+    window_y=$(( (screen_height - HEIGHT) / 2 ))
+    xdotool windowmove $zenity_window_id $window_x $window_y
+  fi
 }
 
 # Display the Zenity checklist
