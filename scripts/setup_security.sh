@@ -111,9 +111,9 @@ net.ipv4.conf.default.log_martians = 1
 # Protect against SYN flood attacks
 net.ipv4.tcp_syncookies = 1
 
-# Disable packet forwarding
-net.ipv4.ip_forward = 0
-net.ipv6.conf.all.forwarding = 0
+# Enable packet forwarding
+net.ipv4.ip_forward = 1
+net.ipv6.conf.all.forwarding = 1
 
 # Ignore directed pings
 net.ipv4.icmp_echo_ignore_all = 1
