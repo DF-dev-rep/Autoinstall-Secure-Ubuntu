@@ -127,21 +127,8 @@ autoinstall:
     - echo '#!/bin/bash' > /target/root/Blackbuntu.sh
     - echo 'wget -O /tmp/Blackbuntu.sh https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/Blackbuntu.sh' >> /target/root/Blackbuntu.sh
     - echo 'chmod +x /tmp/Blackbuntu.sh' >> /target/root/Blackbuntu.sh
-    - echo 'sudo /tmp/Blackbuntu.sh' >> /target/root/Blackbuntu.sh
+    - echo 'bash /tmp/Blackbuntu.sh' >> /target/root/Blackbuntu.sh
     - curtin in-target --target=/target -- chmod +x /root/Blackbuntu.sh
-    - curtin in-target --target=/target -- bash -c 'cat <<EOF > /etc/systemd/system/first-boot-delayed.service
-[Unit]
-Description=Run Blackbuntu script after delay
-After=graphical.target
-Wants=graphical.target
-
-[Service]
-ExecStart=/bin/bash -c "sleep 300; /root/Blackbuntu.sh"
-Type=oneshot
-RemainAfterExit=true
-
-[Install]
-WantedBy=graphical.target
-EOF'
+    - curtin in-target --target=/target -- sh -c 'echo "[Unit]\nDescription=Run Blackbuntu script after delay\nAfter=graphical.target\nWants=graphical.target\n\n[Service]\nExecStart=/bin/bash -c \"sleep 300; /root/Blackbuntu.sh\"\nType=oneshot\nRemainAfterExit=true\n\n[Install]\nWantedBy=graphical.target" > /etc/systemd/system/first-boot-delayed.service'
     - curtin in-target --target=/target -- systemctl enable first-boot-delayed.service
 
