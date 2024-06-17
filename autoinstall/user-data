@@ -128,22 +128,18 @@ autoinstall:
     - echo '#!/bin/bash' > /target/root/run_all.sh
     - echo 'set -e' >> /target/root/run_all.sh
     - echo '' >> /target/root/run_all.sh
-    - echo 'bash /root/setup_security.sh' >> /target/root/run_all.sh
+    - echo 'bash /root/install_packages.sh' >> /target/root/run_all.sh
     - echo 'bash /root/configure_network.sh' >> /target/root/run_all.sh
+    - echo 'bash /root/setup_security.sh' >> /target/root/run_all.sh
     - echo 'bash /root/install_applications.sh' >> /target/root/run_all.sh
-    - echo 'bash /root/setup_display.sh' >> /target/root/run_all.sh
-    - echo 'bash /root/install_drivers_updates.sh' >> /target/root/run_all.sh
-    - echo 'bash /root/vpn_credentials.sh' >> /target/root/run_all.sh
     - echo '' >> /target/root/run_all.sh
     - echo '# Cleanup tasks' >> /target/root/run_all.sh
     - echo 'rm /etc/systemd/system/first-boot-delayed.service' >> /target/root/run_all.sh
     - echo 'rm /root/run_all.sh' >> /target/root/run_all.sh
-    - echo 'rm /root/setup_security.sh' >> /target/root/run_all.sh
+    - echo 'rm /root/install_packages.sh' >> /target/root/run_all.sh
     - echo 'rm /root/configure_network.sh' >> /target/root/run_all.sh
+    - echo 'rm /root/setup_security.sh' >> /target/root/run_all.sh
     - echo 'rm /root/install_applications.sh' >> /target/root/run_all.sh
-    - echo 'rm /root/setup_display.sh' >> /target/root/run_all.sh
-    - echo 'rm /root/install_drivers_updates.sh' >> /target/root/run_all.sh
-    - echo 'rm /root/vpn_credentials.sh' >> /target/root/run_all.sh
     - echo '' >> /target/root/run_all.sh
     - curtin in-target --target=/target -- chmod +x /root/run_all.sh
     - |
