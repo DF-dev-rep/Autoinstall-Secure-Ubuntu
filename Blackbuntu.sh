@@ -33,16 +33,18 @@ display_zenity_checklist() {
     FALSE "install_applications.sh" "Install applications" \
     FALSE "setup_display.sh" "Setup display settings" \
     FALSE "install_drivers_updates.sh" "Install drivers and updates" \
-    FALSE "vpn_credentials.sh" "Configure VPN credentials" \
+    FALSE "vpn_setup.sh" "Configure VPNs" \
     --separator=":")
 
   # Center the Zenity window
   zenity_window_id=$(xdotool search --onlyvisible --class zenity | head -n 1)
-  screen_width=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f1)
-  screen_height=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f2)
-  window_x=$(( (screen_width - WIDTH) / 2 ))
-  window_y=$(( (screen_height - HEIGHT) / 2 ))
-  xdotool windowmove $zenity_window_id $window_x $window_y
+  if [ -n "$zenity_window_id" ]; then
+    screen_width=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f1)
+    screen_height=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f2)
+    window_x=$(( (screen_width - WIDTH) / 2 ))
+    window_y=$(( (screen_height - HEIGHT) / 2 ))
+    xdotool windowmove $zenity_window_id $window_x $window_y
+  fi
 }
 
 # Display the Zenity checklist
@@ -72,7 +74,11 @@ run_script() {
 # Function to clean up downloaded script
 cleanup_script() {
     local script_name="$1"
-    rm "/root/$script_name"
+    if [ -f "/root/$script_name" ]; then
+        rm "/root/$script_name"
+    else
+        log_info "/root/$script_name does not exist. No need to remove."
+    fi
 }
 
 # Download and run each selected script sequentially
@@ -96,22 +102,36 @@ done
 # Final cleanup
 log_info "Cleaning up downloaded scripts..."
 for script in "${SCRIPTS[@]}"; do
-  rm "/root/$script"
+  cleanup_script "$script"
 done
 
-# Create desktop shortcut for Blackbuntu.sh
-cat <<EOF > /home/$USER/Desktop/Blackbuntu.desktop
+# Create a script to download and execute Blackbuntu.sh from the GitHub repository
+USER_HOME=$(eval echo "~$SUDO_USER")
+DOWNLOAD_SCRIPT_PATH="$USER_HOME/Download_and_Run_Blackbuntu.sh"
+cat <<EOF > "$DOWNLOAD_SCRIPT_PATH"
+#!/bin/bash
+wget -O /tmp/Blackbuntu.sh https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/Blackbuntu.sh
+chmod +x /tmp/Blackbuntu.sh
+/tmp/Blackbuntu.sh
+EOF
+
+chmod +x "$DOWNLOAD_SCRIPT_PATH"
+chown $SUDO_USER:$SUDO_USER "$DOWNLOAD_SCRIPT_PATH"
+
+# Create desktop shortcut for Download_and_Run_Blackbuntu.sh
+cat <<EOF > "$USER_HOME/Desktop/Blackbuntu.desktop"
 [Desktop Entry]
 Name=Blackbuntu
 Comment=Run all setup scripts
-Exec=/root/Blackbuntu.sh
+Exec=$DOWNLOAD_SCRIPT_PATH
 Icon=utilities-terminal
 Terminal=true
 Type=Application
 EOF
 
 # Set permissions for the desktop shortcut
-chmod +x /home/$USER/Desktop/Blackbuntu.desktop
+chmod +x "$USER_HOME/Desktop/Blackbuntu.desktop"
+chown $SUDO_USER:$SUDO_USER "$USER_HOME/Desktop/Blackbuntu.desktop"
 
 log_info "Desktop shortcut for Blackbuntu.sh created."
 log_info "Setup complete."
