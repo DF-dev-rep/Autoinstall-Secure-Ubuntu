@@ -90,6 +90,7 @@ autoinstall:
     - apparmor-utils
     - vim
     - gnupg
+    - firefox
     - gnome-shell
     - gnome-software
     - gnome-tweaks
@@ -124,20 +125,36 @@ autoinstall:
     - curtin in-target --target=/target -- rm -rf /home/secure-user/snap
     - curtin in-target --target=/target -- systemctl disable systemd-networkd-wait-online.service
   runcmd:
-    - echo '#!/bin/bash' > /target/root/Blackbuntu.sh
-    - echo 'wget -O /tmp/Blackbuntu.sh https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/Blackbuntu.sh' >> /target/root/Blackbuntu.sh
-    - echo 'chmod +x /tmp/Blackbuntu.sh' >> /target/root/Blackbuntu.sh
-    - echo 'sudo /tmp/Blackbuntu.sh' >> /target/root/Blackbuntu.sh
-    - curtin in-target --target=/target -- chmod +x /root/Blackbuntu.sh
+    - echo '#!/bin/bash' > /target/root/run_all.sh
+    - echo 'set -e' >> /target/root/run_all.sh
+    - echo '' >> /target/root/run_all.sh
+    - echo 'bash /root/setup_security.sh' >> /target/root/run_all.sh
+    - echo 'bash /root/configure_network.sh' >> /target/root/run_all.sh
+    - echo 'bash /root/install_applications.sh' >> /target/root/run_all.sh
+    - echo 'bash /root/setup_display.sh' >> /target/root/run_all.sh
+    - echo 'bash /root/install_drivers_updates.sh' >> /target/root/run_all.sh
+    - echo 'bash /root/vpn_credentials.sh' >> /target/root/run_all.sh
+    - echo '' >> /target/root/run_all.sh
+    - echo '# Cleanup tasks' >> /target/root/run_all.sh
+    - echo 'rm /etc/systemd/system/first-boot-delayed.service' >> /target/root/run_all.sh
+    - echo 'rm /root/run_all.sh' >> /target/root/run_all.sh
+    - echo 'rm /root/setup_security.sh' >> /target/root/run_all.sh
+    - echo 'rm /root/configure_network.sh' >> /target/root/run_all.sh
+    - echo 'rm /root/install_applications.sh' >> /target/root/run_all.sh
+    - echo 'rm /root/setup_display.sh' >> /target/root/run_all.sh
+    - echo 'rm /root/install_drivers_updates.sh' >> /target/root/run_all.sh
+    - echo 'rm /root/vpn_credentials.sh' >> /target/root/run_all.sh
+    - echo '' >> /target/root/run_all.sh
+    - curtin in-target --target=/target -- chmod +x /root/run_all.sh
     - |
       cat <<EOF | sudo tee /etc/systemd/system/first-boot-delayed.service
       [Unit]
-      Description=Run Blackbuntu script after delay
+      Description=Run first boot script after delay
       After=graphical.target
       Wants=graphical.target
 
       [Service]
-      ExecStart=/bin/bash -c 'sleep 300; /root/Blackbuntu.sh'
+      ExecStart=/bin/bash -c 'sleep 300; /root/run_all.sh'
       Type=oneshot
       RemainAfterExit=true
 
