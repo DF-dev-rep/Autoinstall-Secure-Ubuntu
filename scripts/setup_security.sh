@@ -17,11 +17,32 @@ systemctl start fail2ban
 # Create a basic jail.local configuration for fail2ban
 cat <<EOF > /etc/fail2ban/jail.local
 [DEFAULT]
-bantime = 3600  # Ban hosts for one hour
-maxretry = 3    # After three attempts
+bantime = 3600
+maxretry = 3
 
 [sshd]
 enabled = true
+
+[nginx-http-auth]
+enabled = true
+filter = nginx-http-auth
+action = iptables[name=HTTP-auth, port=http, protocol=tcp]
+logpath = /var/log/nginx/error.log
+maxretry = 3
+
+[postfix]
+enabled = true
+port = smtp,ssmtp
+filter = postfix
+logpath = /var/log/mail.log
+maxretry = 3
+
+[dovecot]
+enabled = true
+port = pop3,pop3s,imap,imaps,submission,submissions
+filter = dovecot
+logpath = /var/log/mail.log
+maxretry = 5
 EOF
 
 systemctl restart fail2ban
@@ -39,79 +60,90 @@ ufw default allow outgoing
 ufw allow OpenSSH
 ufw allow 443/tcp  # Allow HTTPS
 ufw allow 80/tcp   # Allow HTTP
+ufw limit ssh      # Rate limit SSH
+ufw allow 123/udp  # Allow NTP
+ufw allow 53/udp   # Allow DNS
+ufw logging on
 ufw enable
+
+echo "Enhanced UFW rules applied." | tee -a /root/setup.log
 
 # Set up sysctl configurations for additional security
 echo "Configuring sysctl for security..." | tee -a /root/setup.log
 cat <<EOF > /etc/sysctl.d/99-sysctl.conf
-# IPv6 disable
+net.ipv4.tcp_syncookies = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+net.ipv4.icmp_ignore_bogus_error_responses = 1
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.default.log_martians = 1
+
+# Disable IPv6 if not needed
 net.ipv6.conf.all.disable_ipv6 = 1
 net.ipv6.conf.default.disable_ipv6 = 1
 net.ipv6.conf.lo.disable_ipv6 = 1
 
-# IP Spoofing protection
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.default.rp_filter = 1
-
-# Ignore ICMP broadcast requests
-net.ipv4.icmp_echo_ignore_broadcasts = 1
-
-# Disable source packet routing
-net.ipv4.conf.all.accept_source_route = 0
-net.ipv4.conf.default.accept_source_route = 0
-
-# Ignore send redirects
-net.ipv4.conf.all.send_redirects = 0
-net.ipv4.conf.default.send_redirects = 0
-
-# Block SYN attacks
-net.ipv4.tcp_syncookies = 1
-
-# Log Martians
-net.ipv4.conf.all.log_martians = 1
-net.ipv4.conf.default.log_martians = 1
-
-# Enable ExecShield (if supported)
-kernel.exec-shield = 1
-kernel.randomize_va_space = 2
-
-# Enable ptrace protections
-kernel.yama.ptrace_scope = 1
-
-# Restrict dmesg access
-kernel.dmesg_restrict = 1
-
-# Disable core dumps
-fs.suid_dumpable = 0
-
-# Restrict access to kernel pointers in /proc
-kernel.kptr_restrict = 2
-
-# Disable unprivileged access to BPF
-kernel.unprivileged_bpf_disabled = 1
-
-# Harden sysctl settings for IPv4
+# Ignore ICMP redirect messages
 net.ipv4.conf.all.accept_redirects = 0
-net.ipv4.conf.all.secure_redirects = 1
-net.ipv4.conf.all.send_redirects = 0
 net.ipv4.conf.default.accept_redirects = 0
-net.ipv4.conf.default.secure_redirects = 1
-net.ipv4.conf.default.send_redirects = 0
-
-# Harden sysctl settings for IPv6
 net.ipv6.conf.all.accept_redirects = 0
 net.ipv6.conf.default.accept_redirects = 0
 
-# Enable TCP SYN Cookie Protection
+# Don't send ICMP redirect messages
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
+# Enable exec-shield
+kernel.exec-shield = 1
+kernel.randomize_va_space = 2
+
+# Disable IP source routing
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+
+# Log suspicious packets
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.default.log_martians = 1
+
+# Protect against SYN flood attacks
 net.ipv4.tcp_syncookies = 1
 
-# Enable IP spoofing protection
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.default.rp_filter = 1
+# Disable packet forwarding
+net.ipv4.ip_forward = 0
+net.ipv6.conf.all.forwarding = 0
+
+# Ignore directed pings
+net.ipv4.icmp_echo_ignore_all = 1
 EOF
 
 # Apply sysctl settings
 sysctl --system
+
+echo "Sysctl network parameters hardened." | tee -a /root/setup.log
+
+# Disable unused network services
+echo "Disabling unused network services..." | tee -a /root/setup.log
+
+# Disable avahi-daemon (Zeroconf service discovery)
+systemctl disable avahi-daemon
+systemctl stop avahi-daemon
+
+# Disable CUPS (printing service) if not needed
+systemctl disable cups
+systemctl stop cups
+
+# Disable NFS server if not needed
+systemctl disable nfs-server
+systemctl stop nfs-server
+
+# Disable Samba (SMB file sharing) if not needed
+systemctl disable smbd
+systemctl stop smbd
+
+echo "Unused network services disabled." | tee -a /root/setup.log
 
 # Install and configure ClamAV for antivirus protection
 echo "Installing and configuring ClamAV..." | tee -a /root/setup.log
@@ -121,10 +153,6 @@ freshclam
 systemctl start clamav-freshclam
 systemctl enable clamav-daemon
 systemctl start clamav-daemon
-
-# Initial ClamAV scan
-echo "Running initial ClamAV scan..." | tee -a /root/setup.log
-clamscan -r / --exclude-dir="^/sys" --exclude-dir="^/proc" --exclude-dir="^/dev"
 
 # Schedule daily ClamAV scans
 cat <<EOF > /etc/cron.daily/clamav_scan
@@ -138,10 +166,6 @@ echo "Installing and configuring rkhunter..." | tee -a /root/setup.log
 apt-get install -y rkhunter
 rkhunter --update
 rkhunter --propupd
-
-# Initial rkhunter check
-echo "Running initial rkhunter check..." | tee -a /root/setup.log
-rkhunter --check --sk
 
 # Schedule daily rkhunter scans
 cat <<EOF > /etc/cron.daily/rkhunter_scan
@@ -211,14 +235,8 @@ cat <<EOF > /etc/logrotate.d/syslog
 }
 EOF
 
-# Install and configure Postfix for local email
-echo "Installing and configuring Postfix..." | tee -a /root/setup.log
-debconf-set-selections <<< "postfix postfix/mailname string $(hostname)"
-debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Local only'"
-apt-get install -y postfix mailutils
-
-# Test Postfix setup by sending a test email to root
-echo "Postfix setup complete" | mail -s "Postfix Test Email" root
+# Restart rsyslog to apply logrotate configuration
+systemctl restart rsyslog
 
 echo "Security setup complete." | tee -a /root/setup.log
 

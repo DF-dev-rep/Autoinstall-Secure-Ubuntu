@@ -35,9 +35,9 @@ apt-get install -y protonvpn | tee -a /root/setup.log
 
 # Install Firefox
 echo "Installing Firefox..." | tee -a /root/setup.log
-add-apt-repository -y ppa:mozillateam/ppa | tee -a /root/setup.log
-apt-get update | tee -a /root/setup.log
-apt-get install -y firefox | tee -a /root/setup.log
+wget -O /tmp/firefox.deb "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"
+dpkg -i /tmp/firefox.deb | tee -a /root/setup.log
+apt-get -f install -y | tee -a /root/setup.log
 
 # Install GitHub Desktop
 echo "Installing GitHub Desktop..." | tee -a /root/setup.log
@@ -48,7 +48,7 @@ apt-get -f install -y | tee -a /root/setup.log
 echo "Manual application installation complete." | tee -a /root/setup.log
 
 # Cleanup downloaded .deb files
-rm -f /tmp/obsidian.deb /tmp/protonvpn.deb /tmp/github-desktop.deb
+rm -f /tmp/obsidian.deb /tmp/protonvpn.deb /tmp/github-desktop.deb /tmp/firefox.deb
 
 echo "Cleanup complete." | tee -a /root/setup.log
 
@@ -58,10 +58,10 @@ CURRENT_FAVORITES=$(gsettings get org.gnome.shell favorite-apps)
 NEW_FAVORITES="['firefox.desktop', 'signal-desktop.desktop', 'obsidian.desktop', 'protonvpn.desktop', 'github-desktop.desktop']"
 gsettings set org.gnome.shell favorite-apps "$NEW_FAVORITES"
 
-# Switch to dark mode
-echo "Switching system to dark mode..." | tee -a /root/setup.log
+# Switch to dark theme
+echo "Switching system to dark theme..." | tee -a /root/setup.log
 gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
-echo "Applications pinned and dark mode enabled." | tee -a /root/setup.log
+echo "Applications pinned and dark theme enabled." | tee -a /root/setup.log
 
