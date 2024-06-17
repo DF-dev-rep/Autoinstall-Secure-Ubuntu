@@ -105,34 +105,5 @@ for script in "${SCRIPTS[@]}"; do
   cleanup_script "$script"
 done
 
-# Create a script to download and execute Blackbuntu.sh from the GitHub repository
-USER_HOME=$(eval echo "~$SUDO_USER")
-DOWNLOAD_SCRIPT_PATH="$USER_HOME/Download_and_Run_Blackbuntu.sh"
-cat <<EOF > "$DOWNLOAD_SCRIPT_PATH"
-#!/bin/bash
-wget -O /tmp/Blackbuntu.sh https://raw.githubusercontent.com/DF-dev-rep/Autoinstall-Secure-Ubuntu/main/run_all.sh
-chmod +x /tmp/Blackbuntu.sh
-/tmp/Blackbuntu.sh
-EOF
-
-chmod +x "$DOWNLOAD_SCRIPT_PATH"
-chown $SUDO_USER:$SUDO_USER "$DOWNLOAD_SCRIPT_PATH"
-
-# Create desktop shortcut for Download_and_Run_Blackbuntu.sh
-cat <<EOF > "$USER_HOME/Desktop/Blackbuntu.desktop"
-[Desktop Entry]
-Name=Blackbuntu
-Comment=Run all setup scripts
-Exec=$DOWNLOAD_SCRIPT_PATH
-Icon=utilities-terminal
-Terminal=true
-Type=Application
-EOF
-
-# Set permissions for the desktop shortcut
-chmod +x "$USER_HOME/Desktop/Blackbuntu.desktop"
-chown $SUDO_USER:$SUDO_USER "$USER_HOME/Desktop/Blackbuntu.desktop"
-
-log_info "Desktop shortcut for Blackbuntu.sh created."
 log_info "Setup complete."
 
